@@ -1,0 +1,24 @@
+# Portofolio Egi — 1 container, Node stdlib (tanpa npm/build).
+# Publik lewat gateway Caddy (network proxy) + Cloudflare Tunnel: portfolio.bgrlango.store
+# Isi halaman: ./data/index.html (backup tiap simpan: ./data/history/). Admin: /admin (kredensial di .env)
+services:
+  portfolio-app:
+    image: node:24-alpine
+    container_name: portfolio-app
+    restart: unless-stopped
+    user: "1000:1000"
+    working_dir: /app
+    command: node server.js
+    env_file: .env
+    volumes:
+      - ./server.js:/app/server.js:ro
+      - ./admin.html:/app/admin.html:ro
+      - ./data:/data
+    ports:
+      - "127.0.0.1:3200:8080"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true

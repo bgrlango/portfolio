@@ -1,0 +1,84 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Portofolio</title>
+<style>
+:root{--bg:#f6f6f4;--ink:#171716;--mute:#8d8d86;--line:#e3e3df;--card:#fff;--accent:#ff5b1f}
+@media (prefers-color-scheme:dark){:root{--bg:#0e0e0d;--ink:#ededea;--mute:#77776f;--line:#252523;--card:#1a1a19;--accent:#ff7a45}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font:14px system-ui,-apple-system,"Segoe UI",sans-serif}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--card)}
+header b{margin-right:8px}
+button,a.btn{font:inherit;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:inherit;cursor:pointer;text-decoration:none}
+button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+#save{background:var(--accent);color:#fff;border-color:transparent;font-weight:600}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#msg{color:var(--mute);font-size:13px;margin-left:auto}
+.hint{width:100%;margin:0;color:var(--mute);font-size:12.5px}
+iframe,textarea{flex:1;width:100%;border:0;min-height:0}
+iframe{background:#fff}
+textarea{padding:14px 16px;font:12.5px/1.5 ui-monospace,Consolas,monospace;background:var(--card);color:var(--ink);resize:none;tab-size:2}
+[hidden]{display:none!important}
+</style></head><body>
+<header>
+  <b>Admin Portofolio</b>
+  <button id="t-vis" type="button" aria-pressed="true">Visual</button>
+  <button id="t-html" type="button" aria-pressed="false">HTML</button>
+  <button id="save" type="button">Simpan</button>
+  <a class="btn" href="/" target="_blank" rel="noopener">Lihat situs ↗</a>
+  <span id="msg" role="status">Memuat…</span>
+  <p class="hint" id="hint-vis">Klik teks mana saja lalu ketik. Animasi &amp; efek mati selama edit. Link, nama besar di banner, dan kode → tab HTML. Ctrl+S = simpan.</p>
+  <p class="hint" id="hint-html" hidden>Edit kode HTML langsung (Ctrl+F untuk cari). Tab Visual = pratinjau. Ctrl+S = simpan.</p>
+</header>
+<iframe id="vis" sandbox="allow-same-origin" title="Editor visual"></iframe>
+<textarea id="html" spellcheck="false" hidden aria-label="Kode HTML"></textarea>
+<script>
+const $=id=>document.getElementById(id),vis=$('vis'),ta=$('html'),msg=$('msg');
+let mode='vis',dirty=false;
+const say=t=>msg.textContent=t;
+const mark=()=>{dirty=true;say('Belum disimpan')};
+
+// Visual mode renders the page with scripts disabled (sandbox), so its DOM is exactly the saved source,
+// untouched by the page's own JS, and safe to serialize back.
+vis.onload=()=>{
+  if(!vis.srcdoc)return;
+  const d=vis.contentDocument;
+  d.querySelectorAll('details:not([open])').forEach(x=>{x.open=true;x.dataset.adminOpen=''}); // show collapsed job details
+  const s=d.createElement('style');s.id='admin-css';s.textContent='#principles p{color:inherit!important}';d.head.append(s);
+  d.designMode='on';
+  d.addEventListener('input',mark);
+  d.addEventListener('keydown',key);
+};
+const fromVis=()=>{
+  const c=vis.contentDocument.documentElement.cloneNode(true);
+  c.querySelector('#admin-css')?.remove();
+  c.querySelectorAll('[data-admin-open]').forEach(x=>{x.open=false;x.removeAttribute('data-admin-open')});
+  return '<!doctype html>'+c.outerHTML;
+};
+const current=()=>mode==='vis'?fromVis():ta.value;
+
+const tab=m=>{
+  if(m===mode)return;
+  if(m==='html')ta.value=fromVis();else vis.srcdoc=ta.value;
+  mode=m;
+  vis.hidden=m!=='vis';ta.hidden=m!=='html';$('hint-vis').hidden=m!=='vis';$('hint-html').hidden=m!=='html';
+  $('t-vis').setAttribute('aria-pressed',m==='vis');$('t-html').setAttribute('aria-pressed',m==='html');
+};
+$('t-vis').onclick=()=>tab('vis');$('t-html').onclick=()=>tab('html');
+ta.addEventListener('input',mark);
+
+const save=async()=>{
+  say('Menyimpan…');
+  try{
+    const r=await fetch(location.origin+'/admin/source',{method:'PUT',headers:{'x-admin':'1','Content-Type':'text/html; charset=utf-8'},body:current()});
+    if(!r.ok)throw new Error(await r.text());
+    dirty=false;say('Tersimpan ✓ '+new Date().toLocaleTimeString('id-ID'));
+  }catch(e){say('Gagal: '+e.message)}
+};
+$('save').onclick=save;
+function key(e){if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();save()}}
+addEventListener('keydown',key);
+addEventListener('beforeunload',e=>{if(dirty)e.preventDefault()});
+
+fetch(location.origin+'/admin/source').then(r=>r.ok?r.text():Promise.reject(r.status))
+  .then(src=>{vis.srcdoc=src;say('Siap')},e=>say('Gagal memuat: '+e));
+</script></body></html>
