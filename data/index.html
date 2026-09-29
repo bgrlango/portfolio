@@ -696,7 +696,7 @@ const title0=document.title,langSel=document.getElementById('lang');
 function setLang(l){
   lang=LANGS.includes(l)?l:'en';const d=document.documentElement;d.lang=lang;d.dir=lang==='ar'?'rtl':'ltr';langSel.value=lang;
   trText.forEach(([e,k])=>e.innerHTML=T(k));trAttr.forEach(([e,a,k])=>e.setAttribute(a,T(k)));
-  document.title=T(title0);durations();
+  document.title=T(title0);durations();dispatchEvent(new Event('langchange')); // hero canvas repaints the name on the new side
 }
 langSel.addEventListener('change',()=>{setLang(langSel.value);try{localStorage.setItem('lang',lang)}catch(e){}});
 
@@ -818,8 +818,8 @@ if(calm)document.querySelector('#wave animate').remove(); // freeze the hover wa
       const gr=tg.createRadialGradient(cx,cy,0,cx,cy,R);gr.addColorStop(0,c);gr.addColorStop(1,c+'00');
       tg.fillStyle=gr;tg.fillRect(0,0,w,h);
     });
-    const fs=Math.min(w*.115,h*.27),x=Math.max(18*k,w*.05),y=h*.5;
-    tg.fillStyle='#fff';tg.shadowColor='#0005';tg.shadowBlur=24*k;tg.textBaseline='alphabetic';
+    const rtl=document.documentElement.dir==='rtl',fs=Math.min(w*.115,h*.27),m=Math.max(18*k,w*.05),x=rtl?w-m:m,y=h*.5; // Arabic: name sits on the right
+    tg.fillStyle='#fff';tg.shadowColor='#0005';tg.shadowBlur=24*k;tg.textBaseline='alphabetic';tg.textAlign=rtl?'right':'left';
     tg.font=`600 ${fs}px Geist, system-ui, sans-serif`;tg.fillText('Supiana Sakti',x,y);
     tg.font=`italic 400 ${fs*1.08}px Newsreader, Georgia, serif`;tg.fillText('Paraggi.',x,y+fs*1.02);
     tg.shadowBlur=0;
@@ -858,6 +858,7 @@ if(calm)document.querySelector('#wave animate').remove(); // freeze the hover wa
   });
   hero.addEventListener('pointerleave',()=>{lx=ly=-1});
   hero.addEventListener('pointerdown',e=>{const r=cv.getBoundingClientRect();drop((e.clientX-r.left)*k,(e.clientY-r.top)*k,7,900)});
+  addEventListener('langchange',()=>{if(w)paint(performance.now())});
   new IntersectionObserver(([e])=>visible=e.isIntersecting).observe(hero);
   let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(size,120)}).observe(hero);
   document.fonts.ready.then(()=>{size();if(!calm)drop(w*.3,h*.5,8,1200);requestAnimationFrame(step)});
