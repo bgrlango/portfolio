@@ -1,0 +1,13 @@
+[Unit]
+Description=Commit + push portfolio data/index.html after an /admin save
+# never give up after a burst of saves
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+User=bangor
+WorkingDirectory=/home/bangor/portfolio
+# let a burst of quick saves land in one commit
+ExecStartPre=/bin/sleep 3
+# push runs even without a new commit, so a push that failed earlier (network) is retried on the next save
+ExecStart=/bin/sh -c 'git add data/index.html && { git diff --cached --quiet || git commit -q -m "content: update via /admin"; } && git push -q'

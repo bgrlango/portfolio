@@ -1,0 +1,11 @@
+# Commit + push the page whenever it changes (every /admin save).
+# Install: sudo cp deploy/portfolio-autocommit.* /etc/systemd/system/ && sudo systemctl enable --now portfolio-autocommit.path
+[Unit]
+Description=Watch the portfolio page for /admin saves
+
+[Path]
+PathChanged=/home/bangor/portfolio/data/index.html
+Unit=portfolio-autocommit.service
+
+[Install]
+WantedBy=multi-user.target
