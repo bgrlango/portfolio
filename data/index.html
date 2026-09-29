@@ -826,16 +826,18 @@ if(calm)document.querySelector('#wave animate').remove(); // freeze the hover wa
     src=new Uint32Array(tg.getImageData(0,0,w,h).data.buffer);
   };
   const size=()=>{
-    const r=hero.getBoundingClientRect();k=Math.min(1,Math.sqrt(320000/(r.width*r.height)));// ponytail: pixel budget ~320k, raise for sharper text on fast machines
+    const r=hero.getBoundingClientRect();if(r.width<2||r.height<2)return; // not laid out yet (hidden tab/pane): the ResizeObserver calls size() again once it has a size
+    k=Math.min(1,Math.sqrt(320000/(r.width*r.height)));// ponytail: pixel budget ~320k, raise for sharper text on fast machines
     w=cv.width=tex.width=Math.round(r.width*k);h=cv.height=tex.height=Math.round(r.height*k);
     cur=new Int32Array(w*h);prev=new Int32Array(w*h);img=g.createImageData(w,h);out=new Uint32Array(img.data.buffer);
     paint(performance.now());g.drawImage(tex,0,0);
   };
   const drop=(x,y,r=3,f=260)=>{x|=0;y|=0;for(let j=-r;j<=r;j++)for(let i=-r;i<=r;i++){const X=x+i,Y=y+j;if(X>0&&Y>0&&X<w-1&&Y<h-1&&i*i+j*j<=r*r)cur[Y*w+X]+=f}};
   const step=t=>{
-    if(!visible)return requestAnimationFrame(step);
-    if(++frame%3===0)paint(t);
-    if(t-last>1200&&Math.random()<.03)drop(Math.random()*w,Math.random()*h,2,420); // idle rain
+    if(!visible||!img)return requestAnimationFrame(step); // keep the loop alive until size() has run
+    // reduced motion: only the ripples the visitor makes; no drifting colours, no idle rain
+    if(!calm&&++frame%3===0)paint(t);
+    if(!calm&&t-last>1200&&Math.random()<.03)drop(Math.random()*w,Math.random()*h,2,420); // idle rain
     for(let y=1;y<h-1;y++)for(let i=y*w+1,e=y*w+w-1;i<e;i++){let v=((cur[i-1]+cur[i+1]+cur[i-w]+cur[i+w])>>1)-prev[i];prev[i]=v-(v>>5)}
     const tmp=cur;cur=prev;prev=tmp;
     for(let y=1;y<h-1;y++)for(let x=1,i=y*w+1;x<w-1;x++,i++){
@@ -858,7 +860,7 @@ if(calm)document.querySelector('#wave animate').remove(); // freeze the hover wa
   hero.addEventListener('pointerdown',e=>{const r=cv.getBoundingClientRect();drop((e.clientX-r.left)*k,(e.clientY-r.top)*k,7,900)});
   new IntersectionObserver(([e])=>visible=e.isIntersecting).observe(hero);
   let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(size,120)}).observe(hero);
-  document.fonts.ready.then(()=>{size();if(!calm){drop(w*.3,h*.5,8,1200);requestAnimationFrame(step)}});
+  document.fonts.ready.then(()=>{size();if(!calm)drop(w*.3,h*.5,8,1200);requestAnimationFrame(step)});
 })();
 
 // ---- liquid cursor lens with ripple trail (fine pointers only) ----
