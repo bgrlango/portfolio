@@ -312,6 +312,9 @@ section{scroll-margin-top:72px}
 :root:lang(ar){--show:"+ عرض التفاصيل";--hide:"− إخفاء"}
 :root:lang(ja){--show:"+ 詳細を表示";--hide:"− 閉じる"}
 [dir=rtl] .side a.on{transform:translateX(-4px)}
+/* the sidebar (search, language picker, theme) stays on the left in every language; Arabic mirrors only the content */
+[dir=rtl] .shell{direction:ltr}
+[dir=rtl] .wrap,[dir=rtl] .side nav{direction:rtl}
 :lang(ar) *{letter-spacing:0!important}
 :root:lang(ar){--mono:"Geist Mono",system-ui,"Segoe UI",Tahoma,sans-serif} /* monospace fallbacks break Arabic letter joining */
 :root:lang(ar) em,:root:lang(ja) em{font-style:normal}
