@@ -301,6 +301,49 @@ section{scroll-margin-top:72px}
 .c-k{font:11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
 .copy.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
 @media (max-width:420px){.c-row{grid-template-columns:1fr auto}.c-k{grid-column:1/-1}}
+/* ---- radial timeline (explore): About / Work / More as three arcs of one ring ---- */
+.explore{max-width:880px;margin:32px auto 0;display:grid;gap:8px}
+.dial svg{display:block;width:min(100%,600px);height:auto;margin-inline:auto;overflow:visible}
+.dial .tk{stroke:var(--mute);stroke-width:1.2;opacity:.35;transition:opacity .2s}
+.dial .mk line{stroke:var(--ink);stroke-width:1.6;transition:stroke .2s}
+.dial text{fill:var(--soft);font:italic 400 var(--fs,15px) var(--serif);transition:fill .2s}
+.dial .grp text{fill:var(--mute);font:500 calc(var(--fs,15px)*.78) var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.dial .ctr{fill:var(--ink);font-size:calc(var(--fs,15px)*1.7);pointer-events:none}
+.dial a{cursor:pointer;outline:none}
+.dial .mk:hover text,.dial .mk.near text,.dial .mk:focus-visible text,.dial .grp:hover text,.dial .grp:focus-visible text{fill:var(--ink)}
+.dial .mk:hover line,.dial .mk.near line,.dial .mk:focus-visible line{stroke:var(--accent-ink)}
+.dial a:focus-visible text{text-decoration:underline;text-decoration-color:var(--accent-ink)}
+/* ---- Time Machine: one item per slide, stacked into depth ---- */
+html:has(#tm[open]){overflow:hidden}
+#tm{width:100vw;height:100vh;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;overflow:hidden;background:var(--bg)}
+#tm[open]{display:grid;grid-template:auto 1fr auto/1fr auto}
+#tm::backdrop{background:transparent}
+.tm-top{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px}
+.tm-groups{display:flex;gap:6px;flex-wrap:wrap}
+.tm-groups button,.tm-x,.tm-nav button{font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);padding:9px 13px;border:1px solid var(--line);border-radius:99px;background:var(--card)}
+.tm-groups button:hover,.tm-x:hover,.tm-nav button:hover{color:var(--ink);border-color:var(--mute)}
+.tm-groups button[aria-pressed=true]{color:var(--bg);background:var(--ink);border-color:var(--ink)}
+.tm-x{font-size:15px;padding:6px 12px}
+.tm-stage{position:relative;perspective:1400px;perspective-origin:50% 15%;overflow:hidden;touch-action:pan-y}
+.tm-card{position:absolute;left:50%;top:56%;width:min(560px,calc(100vw - 40px));max-height:62vh;overflow:auto;display:grid;align-content:start;gap:16px;padding:24px 26px;
+  border:1px solid var(--line);border-radius:18px;background:var(--card);box-shadow:0 30px 60px -30px #0006;transition:transform .6s var(--ease),opacity .45s;will-change:transform}
+.tm-card.back{cursor:pointer}
+.tm-card::after{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--bg);opacity:var(--dim,0);pointer-events:none;transition:opacity .45s} /* cards further back fade into the background, stay opaque */
+.tm-card.back>*{pointer-events:none}
+.tm-kick{font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.tm-card details{background:none}.tm-card summary{pointer-events:none;padding:0}.tm-card .tog{display:none}.tm-card details ul{padding-bottom:0;margin-top:12px}
+.tm-card .row{border:0;padding:0}
+.tm-card .principles{padding:0;text-align:start}.tm-card .principles p{color:var(--ink)}
+.tm-proj{display:grid;gap:10px}.tm-proj small{font:12px var(--mono);color:var(--mute)}.tm-proj .t{font-size:20px}
+.tm-band{display:block;height:8px;border-radius:99px;position:relative;overflow:hidden}.tm-band::before{display:none}
+.tm-exp{display:grid;gap:12px}.tm-exp p{margin:0;color:var(--soft)}.tm-exp ul{margin:0;padding-inline-start:18px;display:grid;gap:4px;color:var(--soft)}.tm-exp .copy{justify-self:start}
+.tm-rail{grid-row:2;grid-column:2;list-style:none;margin:0;padding:0 20px;display:flex;flex-direction:column;justify-content:center;gap:5px;overflow:auto}
+.tm-rail button{display:flex;align-items:center;justify-content:flex-end;gap:8px;width:100%;min-height:12px;font:11px/1 var(--mono);color:var(--mute);text-align:end}
+.tm-rail button::after{content:"";flex:none;width:14px;height:1px;background:currentColor;transition:width .3s var(--ease)}
+.tm-rail button:hover,.tm-rail button.on{color:var(--accent-ink)}.tm-rail button.on::after{width:28px;height:2px}
+.tm-nav{grid-column:1/-1;display:flex;justify-content:center;align-items:center;gap:14px;padding:14px 20px 22px}
+.tm-count{font:12px var(--mono);color:var(--mute);font-variant-numeric:tabular-nums;min-width:7ch;text-align:center}
+@media (max-width:640px){.tm-rail{display:none}#tm[open]{grid-template:auto 1fr auto/1fr}}
 /* ---- language + theme controls ---- */
 .prefs{display:flex;gap:6px}
 .prefs select{display:block;flex:1;min-width:0;cursor:pointer}
@@ -346,6 +389,11 @@ section{scroll-margin-top:72px}
     </nav>
   </div>
 </header>
+
+<section class="explore" id="explore" aria-labelledby="x-h">
+  <h2 class="label" id="x-h"><span>Explore</span> <span>Pick a section</span></h2>
+  <div class="dial" id="dial"></div>
+</section>
 
 <div class="shell">
 <aside class="side in" style="--i:0">
@@ -530,6 +578,13 @@ section{scroll-margin-top:72px}
   <ul id="results" role="listbox"></ul>
 </dialog>
 
+<dialog id="tm" aria-label="Slides">
+  <div class="tm-top"><div class="tm-groups"></div><button class="tm-x" type="button" aria-label="Close">×</button></div>
+  <div class="tm-stage"></div>
+  <ol class="tm-rail"></ol>
+  <div class="tm-nav"><button class="tm-prev" type="button" aria-label="Previous">↑</button><span class="tm-count"></span><button class="tm-next" type="button" aria-label="Next">↓</button></div>
+</dialog>
+
 <div class="cursor" id="cursor" aria-hidden="true"></div>
 <div class="preview" id="preview" aria-hidden="true"><div class="art" id="art"><span id="tag"></span></div></div>
 
@@ -678,7 +733,15 @@ section{scroll-margin-top:72px}
 "Open GitHub":["Buka GitHub","فتح GitHub","GitHubを開く"],
 "No results":["Tidak ada hasil","لا توجد نتائج","該当なし"],
 "Copied ✓":["Tersalin ✓","تم النسخ ✓","コピーしました ✓"],
-"Press Ctrl+C":["Tekan Ctrl+C","اضغط Ctrl+C","Ctrl+Cを押してください"]
+"Press Ctrl+C":["Tekan Ctrl+C","اضغط Ctrl+C","Ctrl+Cを押してください"],
+"Explore":["Jelajahi","استكشف","探索"],
+"Pick a section":["Pilih bagian","اختر قسمًا","セクションを選択"],
+"Slides":["Slide","الشرائح","スライド"],
+"Close":["Tutup","إغلاق","閉じる"],
+"Previous":["Sebelumnya","السابق","前へ"],
+"Next":["Berikutnya","التالي","次へ"],
+"Interactive experiments live on the page.":["Eksperimen interaktif bisa dicoba langsung di halaman.","التجارب التفاعلية متاحة للتجربة في الصفحة.","インタラクティブな実験はページ上で試せます。"],
+"Open in page":["Buka di halaman","افتح في الصفحة","ページで開く"]
 }
 </script>
 <script>
@@ -797,12 +860,12 @@ document.querySelectorAll('.bar').forEach(b=>bio.observe(b));
 setTimeout(()=>document.querySelectorAll('.bar').forEach(b=>b.classList.add('go')),2500); // ponytail: fallback if observer never fires
 
 // copy buttons (email, WhatsApp)
-document.querySelectorAll('[data-copy]').forEach(b=>{
-  const key=norm(b.innerHTML);
-  b.addEventListener('click',()=>{
-    const done=m=>{b.textContent=m;setTimeout(()=>b.innerHTML=T(key),1600)};
-    navigator.clipboard.writeText(b.dataset.copy).then(()=>done(T('Copied ✓')),()=>{const t=b.previousElementSibling;if(t)getSelection().selectAllChildren(t);done(T('Press Ctrl+C'))});
-  });
+document.querySelectorAll('[data-copy]').forEach(b=>b.dataset.key=norm(b.innerHTML)); // English label, restored in the current language
+// delegated, so the copies of these buttons inside Time Machine slides work too
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-copy]');if(!b)return;
+  const done=m=>{b.textContent=m;setTimeout(()=>b.innerHTML=T(b.dataset.key),1600)};
+  navigator.clipboard.writeText(b.dataset.copy).then(()=>done(T('Copied ✓')),()=>{const t=b.previousElementSibling;if(t)getSelection().selectAllChildren(t);done(T('Press Ctrl+C'))});
 });
 
 const calm=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -882,6 +945,99 @@ if(!calm&&matchMedia('(pointer: fine)').matches){
   const tickC=()=>{cx+=(tx-cx)*.22;cy+=(ty-cy)*.22;sc+=(ts-sc)*.18;c.style.transform=`translate(${cx}px,${cy}px) scale(${sc})`;requestAnimationFrame(tickC)};
   tickC();
 }
+
+// ---- radial timeline: one ring, About / Work / More each own a third; every sidebar link is a labelled tick ----
+const NS='http://www.w3.org/2000/svg',V=560,C=V/2,R=150,TAU=2*Math.PI;
+const groups=[...document.querySelectorAll('.side nav')].map(n=>({title:n.querySelector('h2'),links:[...n.querySelectorAll('a')]}));
+const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 '+V+' '+V);
+const el=(tag,attrs,parent=svg)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.append(e);return e};
+const pt=(a,r)=>[C+r*Math.sin(a),C-r*Math.cos(a)]; // a=0 is 12 o'clock, clockwise
+const angDist=(a,b)=>{const d=Math.abs(a-b)%TAU;return Math.min(d,TAU-d)};
+const minor=[...Array(144)].map((_,i)=>{const a=i/144*TAU,[x1,y1]=pt(a,R-10),[x2,y2]=pt(a,R);return{a,l:el('line',{x1,y1,x2,y2,class:'tk'})}});
+const marks=[],SEG=TAU/3,GAP=.34;
+groups.forEach((g,gi)=>{
+  const a0=(gi-.5)*SEG+GAP/2,a1=(gi+.5)*SEG-GAP/2, /* About centred at 12 o'clock */mid=(a0+a1)/2,[gx,gy]=pt(mid,R-46);
+  const ga=el('a',{href:g.links[0].hash,class:'grp'});g.text=el('text',{x:gx,y:gy,'text-anchor':'middle','dominant-baseline':'middle'},ga);
+  ga.addEventListener('click',e=>{e.preventDefault();openTM(gi,0)});
+  g.links.forEach((link,li)=>{
+    const n=g.links.length,a=n<2?mid:a0+(a1-a0)*li/(n-1),[x1,y1]=pt(a,R-14),[x2,y2]=pt(a,R+18),[lx,ly]=pt(a,R+28),sn=Math.sin(a),cs=Math.cos(a);
+    const m=el('a',{href:link.hash,class:'mk'});el('line',{x1,y1,x2,y2},m);
+    const t=el('text',{x:lx,y:ly,'text-anchor':Math.abs(sn)<.08?'middle':sn>0?'start':'end','dominant-baseline':cs>.6?'auto':cs<-.6?'hanging':'middle'},m);
+    m.addEventListener('click',e=>{e.preventDefault();openTM(gi,li)});
+    marks.push({a,m,t,link});
+  });
+});
+const ctr=el('text',{x:C,y:C,class:'ctr','text-anchor':'middle','dominant-baseline':'middle'});
+document.getElementById('dial').append(svg);
+const dialText=()=>{groups.forEach(g=>g.text.textContent=g.title.textContent);marks.forEach(k=>k.t.textContent=k.link.textContent);ctr.textContent=T('Pick a section');svg.setAttribute('aria-label',T('Explore'))};
+// labels stay ~11px on phones: font size is in viewBox units, so grow it as the ring shrinks
+const fitDial=()=>{const k=svg.clientWidth/V||1;svg.style.setProperty('--fs',Math.min(22,Math.max(15,11.5/k))+'px')};
+fitDial();new ResizeObserver(fitDial).observe(svg);
+// ticks near the pointer grow (dock-style magnifier); the nearest section is named in the centre
+const lens=a=>{minor.forEach(t=>{const f=a==null?0:Math.max(0,1-angDist(t.a,a)/.35),[x1,y1]=pt(t.a,R-10-f*18);t.l.setAttribute('x1',x1);t.l.setAttribute('y1',y1);t.l.style.opacity=.35+f*.65});
+  let best=null,bd=9;marks.forEach(k=>{const d=a==null?9:angDist(k.a,a);k.m.classList.toggle('near',d<.16);if(d<bd){bd=d;best=k}});
+  ctr.textContent=bd<.3?best.link.textContent:T('Pick a section')};
+svg.addEventListener('pointermove',e=>{const r=svg.getBoundingClientRect();lens((Math.atan2(e.clientX-r.left-r.width/2,-(e.clientY-r.top-r.height/2))+TAU)%TAU)});
+svg.addEventListener('pointerleave',()=>lens(null));
+marks.forEach(k=>{k.m.addEventListener('focus',()=>lens(k.a));k.m.addEventListener('blur',()=>lens(null))});
+addEventListener('langchange',dialText);
+
+// ---- Time Machine: every item of a section becomes one slide, copied from the page itself (so /admin edits show up here) ----
+const tm=document.getElementById('tm'),stage=tm.querySelector('.tm-stage'),rail=tm.querySelector('.tm-rail'),gnav=tm.querySelector('.tm-groups'),count=tm.querySelector('.tm-count');
+const all=sel=>[...document.querySelectorAll(sel)];
+const cl=(e,wrap)=>{const c=e.cloneNode(true);[c,...c.querySelectorAll('[id]')].forEach(x=>x.removeAttribute('id'));c.classList.remove('in');if(!wrap)return c;const w=document.createElement('div');w.className=wrap;w.append(c);return w};
+const SLIDES={
+  '#profile':()=>{const c=cl(document.getElementById('profile'));c.querySelector('h2')?.remove();return[c]},
+  '#experience':()=>all('#tl details').map(d=>{const c=cl(d);c.open=true;return c}),
+  '#skills':()=>all('#skills .sk').map(e=>cl(e,'skills')),
+  '#education':()=>all('#education .edu > div').map(e=>cl(e,'edu')),
+  '#hobbies':()=>[cl(document.querySelector('#hobbies .hob'))],
+  '#projects-s':()=>all('#projects .row').map(r=>{const w=document.createElement('div');w.className='tm-proj';w.innerHTML='<i></i><small></small>';w.firstChild.className='tm-band '+r.dataset.art;w.querySelector('small').textContent=r.dataset.tag;w.append(cl(r));return w}),
+  '#experiments':()=>{const w=document.createElement('div');w.className='tm-exp';w.innerHTML='<p></p><ul></ul><button class="copy" type="button"></button>';
+    w.querySelector('p').textContent=T('Interactive experiments live on the page.');
+    all('#experiments figcaption').forEach(f=>{const li=document.createElement('li');li.textContent=f.firstElementChild.textContent;w.querySelector('ul').append(li)});
+    const b=w.querySelector('button');b.textContent=T('Open in page');b.onclick=()=>{tm.close();requestAnimationFrame(()=>document.getElementById('experiments').scrollIntoView({behavior:calm?'auto':'smooth'}))};return[w]}, // next frame: the page is scroll-locked until the dialog is gone
+  '#writing':()=>[cl(document.querySelector('#writing > div'))],
+  '#principles':()=>{const c=cl(document.getElementById('principles'));c.querySelectorAll('p').forEach(p=>p.classList.add('lit'));return[c]},
+  '#contact':()=>[cl(document.querySelector('#contact .contact'))],
+};
+let cards=[],cur=0;
+function openTM(gi,li){
+  const g=groups[gi];cards=[];stage.replaceChildren();rail.replaceChildren();let start=0;
+  g.links.forEach((link,i)=>{if(i===li)start=cards.length;(SLIDES[link.hash]?.()||[]).forEach((body,j,list)=>{
+    const n=cards.length,c=document.createElement('article'),k=document.createElement('div');
+    k.className='tm-kick';k.textContent=link.textContent+(list.length>1?' · '+(j+1)+'/'+list.length:'');
+    c.className='tm-card';c.setAttribute('aria-roledescription',T('Slides'));c.append(k,body);c.addEventListener('click',()=>{if(n!==cur)goTo(n)});stage.append(c);
+    const it=document.createElement('li'),b=document.createElement('button');b.type='button';b.textContent=j?'':link.textContent;b.setAttribute('aria-label',k.textContent);b.onclick=()=>goTo(n);it.append(b);rail.append(it);
+    cards.push(c)})});
+  gnav.replaceChildren(...groups.map((x,i)=>{const b=document.createElement('button');b.type='button';b.textContent=x.title.textContent;b.setAttribute('aria-pressed',i===gi);b.onclick=()=>openTM(i,0);return b}));
+  cur=start;layout();if(!tm.open)tm.showModal();
+}
+const goTo=n=>{cur=Math.max(0,Math.min(cards.length-1,n));layout()};
+function layout(){
+  cards.forEach((c,i)=>{const d=i-cur,shown=d>=0&&d<5;
+    c.style.transform=d<0?'translate(-50%,-50%) translate3d(0,90px,240px)':'translate(-50%,-50%) translate3d(0,'+(-d*34)+'px,'+(-d*110)+'px)';
+    c.style.opacity=d<0||!shown?0:1;c.style.setProperty('--dim',Math.max(d,0)*.2);c.style.zIndex=100-Math.abs(d);c.style.visibility=shown||d===-1?'visible':'hidden';
+    c.classList.toggle('back',d>0);c.setAttribute('aria-hidden',d!==0);c.inert=d<0; // cards behind stay clickable (click = jump there)
+    [...c.children].forEach(x=>x.inert=d!==0)});
+  rail.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('on',i===cur));
+  count.textContent=String(cur+1).padStart(2,'0')+' / '+String(cards.length).padStart(2,'0');
+}
+tm.querySelector('.tm-x').onclick=()=>tm.close();
+tm.querySelector('.tm-prev').onclick=()=>goTo(cur-1);
+tm.querySelector('.tm-next').onclick=()=>goTo(cur+1);
+tm.addEventListener('keydown',e=>{const k={ArrowDown:1,ArrowRight:1,PageDown:1,ArrowUp:-1,ArrowLeft:-1,PageUp:-1}[e.key];
+  if(k){goTo(cur+k);e.preventDefault()}else if(e.key==='Home'){goTo(0);e.preventDefault()}else if(e.key==='End'){goTo(cards.length-1);e.preventDefault()}});
+// wheel: one slide per gesture; a long card scrolls its own text first
+let wAcc=0,wLock=0;
+stage.addEventListener('wheel',e=>{const c=cards[cur];
+  if(c&&c.contains(e.target)&&(e.deltaY>0?c.scrollTop+c.clientHeight<c.scrollHeight-1:c.scrollTop>0))return;
+  e.preventDefault();if(performance.now()<wLock)return;wAcc+=e.deltaY;
+  if(Math.abs(wAcc)>40){goTo(cur+(wAcc>0?1:-1));wAcc=0;wLock=performance.now()+450}},{passive:false});
+// touch: swipe sideways to change slide (vertical drag still scrolls a long card)
+let sx=0,sy=0;
+stage.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY});
+stage.addEventListener('pointerup',e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(e.pointerType!=='mouse'&&Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy))goTo(cur+(dx<0?1:-1))});
 
 // ---- dark / light toggle: default follows the OS, a click overrides and is remembered ----
 const themeBtn=document.getElementById('theme'),docEl=document.documentElement,osDark=matchMedia('(prefers-color-scheme: dark)');
