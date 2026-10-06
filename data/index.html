@@ -386,7 +386,7 @@ html:has(#tm[open]){overflow:hidden}
     <nav class="hero-links" aria-label="Social">
       <a class="glass" href="https://github.com/bgrlango" target="_blank" rel="noopener">GitHub ↗</a>
       <a class="glass" href="https://www.linkedin.com/in/supiana-sakti-paraggi-870708227/" target="_blank" rel="noopener">LinkedIn ↗</a>
-      <button class="glass" type="button" data-copy="#wa">WhatsApp @bgrlango</button>
+      <button class="glass" type="button" data-copy="#wa">WhatsApp <span data-wa>@bgrlango</span></button>
     </nav>
   </div>
 </header>
@@ -862,6 +862,7 @@ document.querySelectorAll('.bar').forEach(b=>bio.observe(b));
 setTimeout(()=>document.querySelectorAll('.bar').forEach(b=>b.classList.add('go')),2500); // ponytail: fallback if observer never fires
 
 // copy buttons (email, WhatsApp). data-copy is the text itself, or "#id" = copy that element's text (one place to edit in /admin)
+const wa=document.getElementById('wa');if(wa)document.querySelectorAll('[data-wa]').forEach(e=>e.textContent=wa.textContent.trim()); // hero label shows the Contact handle
 document.querySelectorAll('[data-copy]').forEach(b=>b.dataset.key=norm(b.innerHTML)); // English label, restored in the current language
 // delegated, so the copies of these buttons inside Time Machine slides work too
 document.addEventListener('click',e=>{
