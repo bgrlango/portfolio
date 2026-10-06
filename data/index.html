@@ -385,7 +385,7 @@ html:has(#tm[open]){overflow:hidden}
     <nav class="hero-links" aria-label="Social">
       <a class="glass" href="https://github.com/bgrlango" target="_blank" rel="noopener">GitHub ↗</a>
       <a class="glass" href="https://www.linkedin.com/in/supiana-sakti-paraggi-870708227/" target="_blank" rel="noopener">LinkedIn ↗</a>
-      <button class="glass" type="button" data-copy="@bangorlango">WhatsApp @bangorlango</button>
+      <button class="glass" type="button" data-copy="@bgrlango">WhatsApp @bgrlango</button>
     </nav>
   </div>
 </header>
@@ -562,7 +562,7 @@ html:has(#tm[open]){overflow:hidden}
     <h2 class="label" id="k-h"><span>Contact</span> <span>Open to work</span></h2>
     <div class="contact">
       <div class="c-row"><span class="c-k">Email</span><span class="mail">supiana.sakti@bgrlango.site</span><button class="copy" id="copy" type="button" data-copy="supiana.sakti@bgrlango.site">Copy</button></div>
-      <div class="c-row"><span class="c-k">WhatsApp</span><span class="mail">@bangorlango</span><button class="copy" type="button" data-copy="@bangorlango">Copy</button></div>
+      <div class="c-row"><span class="c-k">WhatsApp</span><span class="mail">@bgrlango</span><button class="copy" type="button" data-copy="@bgrlango">Copy</button></div>
       <div class="c-row"><span class="c-k">LinkedIn</span><a class="mail" id="li" href="https://www.linkedin.com/in/supiana-sakti-paraggi-870708227/" target="_blank" rel="noopener">supiana-sakti-paraggi</a><a class="copy ghost" href="https://www.linkedin.com/in/supiana-sakti-paraggi-870708227/" target="_blank" rel="noopener">Open ↗</a></div>
       <div class="c-row"><span class="c-k">GitHub</span><a class="mail" id="gh" href="https://github.com/bgrlango" target="_blank" rel="noopener">bgrlango</a><a class="copy ghost" href="https://github.com/bgrlango" target="_blank" rel="noopener">Open ↗</a></div>
     </div>
@@ -825,7 +825,7 @@ const cmd=document.getElementById('cmd'),q=document.getElementById('q'),res=docu
 const items=()=>[...links.map(a=>({t:a.textContent,k:T('Section'),h:a.hash})),
   ...[...document.querySelectorAll('#projects .row .t')].map(t=>({t:t.textContent,k:T('Project'),h:'#projects-s'})),
   {t:T('Copy email'),k:T('Action'),run:()=>document.getElementById('copy').click()},
-  {t:T('Copy WhatsApp'),k:T('Action'),run:()=>document.querySelector('.c-row [data-copy="@bangorlango"]').click()},
+  {t:T('Copy WhatsApp'),k:T('Action'),run:()=>document.querySelector('.c-row [data-copy="@bgrlango"]').click()},
   {t:T('Open LinkedIn'),k:T('Link'),run:()=>document.getElementById('li').click()},
   {t:T('Open GitHub'),k:T('Link'),run:()=>document.getElementById('gh').click()}];
 let sel=0,shown=[];
