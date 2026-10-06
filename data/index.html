@@ -318,6 +318,7 @@ html:has(#tm[open]){overflow:hidden}
 #tm{width:100vw;height:100vh;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;overflow:hidden;background:var(--bg)}
 #tm[open]{display:grid;grid-template:auto 1fr auto/1fr auto}
 #tm::backdrop{background:transparent}
+#tm:focus{outline:none}
 .tm-top{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px}
 .tm-groups{display:flex;gap:6px;flex-wrap:wrap}
 .tm-groups button,.tm-x,.tm-nav button{font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);padding:9px 13px;border:1px solid var(--line);border-radius:99px;background:var(--card)}
@@ -385,7 +386,7 @@ html:has(#tm[open]){overflow:hidden}
     <nav class="hero-links" aria-label="Social">
       <a class="glass" href="https://github.com/bgrlango" target="_blank" rel="noopener">GitHub ↗</a>
       <a class="glass" href="https://www.linkedin.com/in/supiana-sakti-paraggi-870708227/" target="_blank" rel="noopener">LinkedIn ↗</a>
-      <button class="glass" type="button" data-copy="@bgrlango">WhatsApp @bgrlango</button>
+      <button class="glass" type="button" data-copy="#wa">WhatsApp @bgrlango</button>
     </nav>
   </div>
 </header>
@@ -562,7 +563,7 @@ html:has(#tm[open]){overflow:hidden}
     <h2 class="label" id="k-h"><span>Contact</span> <span>Open to work</span></h2>
     <div class="contact">
       <div class="c-row"><span class="c-k">Email</span><span class="mail">supiana.sakti@bgrlango.site</span><button class="copy" id="copy" type="button" data-copy="supiana.sakti@bgrlango.site">Copy</button></div>
-      <div class="c-row"><span class="c-k">WhatsApp</span><span class="mail">@bgrlango</span><button class="copy" type="button" data-copy="@bgrlango">Copy</button></div>
+      <div class="c-row"><span class="c-k">WhatsApp</span><span class="mail" id="wa">@bgrlango</span><button class="copy" id="copy-wa" type="button" data-copy="#wa">Copy</button></div>
       <div class="c-row"><span class="c-k">LinkedIn</span><a class="mail" id="li" href="https://www.linkedin.com/in/supiana-sakti-paraggi-870708227/" target="_blank" rel="noopener">supiana-sakti-paraggi</a><a class="copy ghost" href="https://www.linkedin.com/in/supiana-sakti-paraggi-870708227/" target="_blank" rel="noopener">Open ↗</a></div>
       <div class="c-row"><span class="c-k">GitHub</span><a class="mail" id="gh" href="https://github.com/bgrlango" target="_blank" rel="noopener">bgrlango</a><a class="copy ghost" href="https://github.com/bgrlango" target="_blank" rel="noopener">Open ↗</a></div>
     </div>
@@ -578,11 +579,11 @@ html:has(#tm[open]){overflow:hidden}
   <ul id="results" role="listbox"></ul>
 </dialog>
 
-<dialog id="tm" aria-label="Slides">
+<dialog id="tm" aria-label="Slides" tabindex="-1">
   <div class="tm-top"><div class="tm-groups"></div><button class="tm-x" type="button" aria-label="Close">×</button></div>
   <div class="tm-stage"></div>
   <ol class="tm-rail"></ol>
-  <div class="tm-nav"><button class="tm-prev" type="button" aria-label="Previous">↑</button><span class="tm-count"></span><button class="tm-next" type="button" aria-label="Next">↓</button></div>
+  <div class="tm-nav"><button class="tm-prev" type="button" aria-label="Previous">↑</button><span class="tm-count" aria-live="polite"></span><button class="tm-next" type="button" aria-label="Next">↓</button></div>
 </dialog>
 
 <div class="cursor" id="cursor" aria-hidden="true"></div>
@@ -737,6 +738,7 @@ html:has(#tm[open]){overflow:hidden}
 "Explore":["Jelajahi","استكشف","探索"],
 "Pick a section":["Pilih bagian","اختر قسمًا","セクションを選択"],
 "Slides":["Slide","الشرائح","スライド"],
+"Slide":["Slide","شريحة","スライド"],
 "Close":["Tutup","إغلاق","閉じる"],
 "Previous":["Sebelumnya","السابق","前へ"],
 "Next":["Berikutnya","التالي","次へ"],
@@ -825,7 +827,7 @@ const cmd=document.getElementById('cmd'),q=document.getElementById('q'),res=docu
 const items=()=>[...links.map(a=>({t:a.textContent,k:T('Section'),h:a.hash})),
   ...[...document.querySelectorAll('#projects .row .t')].map(t=>({t:t.textContent,k:T('Project'),h:'#projects-s'})),
   {t:T('Copy email'),k:T('Action'),run:()=>document.getElementById('copy').click()},
-  {t:T('Copy WhatsApp'),k:T('Action'),run:()=>document.querySelector('.c-row [data-copy="@bgrlango"]').click()},
+  {t:T('Copy WhatsApp'),k:T('Action'),run:()=>document.getElementById('copy-wa').click()},
   {t:T('Open LinkedIn'),k:T('Link'),run:()=>document.getElementById('li').click()},
   {t:T('Open GitHub'),k:T('Link'),run:()=>document.getElementById('gh').click()}];
 let sel=0,shown=[];
@@ -859,13 +861,15 @@ const bio=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.tar
 document.querySelectorAll('.bar').forEach(b=>bio.observe(b));
 setTimeout(()=>document.querySelectorAll('.bar').forEach(b=>b.classList.add('go')),2500); // ponytail: fallback if observer never fires
 
-// copy buttons (email, WhatsApp)
+// copy buttons (email, WhatsApp). data-copy is the text itself, or "#id" = copy that element's text (one place to edit in /admin)
 document.querySelectorAll('[data-copy]').forEach(b=>b.dataset.key=norm(b.innerHTML)); // English label, restored in the current language
 // delegated, so the copies of these buttons inside Time Machine slides work too
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-copy]');if(!b)return;
   const done=m=>{b.textContent=m;setTimeout(()=>b.innerHTML=T(b.dataset.key),1600)};
-  navigator.clipboard.writeText(b.dataset.copy).then(()=>done(T('Copied ✓')),()=>{const t=b.previousElementSibling;if(t)getSelection().selectAllChildren(t);done(T('Press Ctrl+C'))});
+  const src=b.dataset.copy.startsWith('#')?document.querySelector(b.dataset.copy):null,text=src?src.textContent.trim():b.dataset.copy;
+  // fallback: select the visible value next to the button (its own row, also inside slides), else the source element
+  navigator.clipboard.writeText(text).then(()=>done(T('Copied ✓')),()=>{const p=b.previousElementSibling,t=p?.classList.contains('mail')?p:src;if(t)getSelection().selectAllChildren(t);done(T('Press Ctrl+C'))});
 });
 
 const calm=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -946,9 +950,20 @@ if(!calm&&matchMedia('(pointer: fine)').matches){
   tickC();
 }
 
+// ---- dark / light toggle: default follows the OS, a click overrides and is remembered ----
+const themeBtn=document.getElementById('theme'),docEl=document.documentElement,osDark=matchMedia('(prefers-color-scheme: dark)');
+const isDark=()=>docEl.dataset.theme?docEl.dataset.theme==='dark':osDark.matches;
+const syncTheme=()=>themeBtn.setAttribute('aria-pressed',isDark());
+themeBtn.addEventListener('click',()=>{docEl.dataset.theme=isDark()?'light':'dark';try{localStorage.setItem('theme',docEl.dataset.theme)}catch(e){}syncTheme()});
+osDark.addEventListener('change',syncTheme);
+syncTheme();
+setLang(lang);
+
+// explore + Time Machine are extras: if /admin edits break their assumptions, drop the section instead of the page
+try{
 // ---- radial timeline: one ring, About / Work / More each own a third; every sidebar link is a labelled tick ----
 const NS='http://www.w3.org/2000/svg',V=560,C=V/2,R=150,TAU=2*Math.PI;
-const groups=[...document.querySelectorAll('.side nav')].map(n=>({title:n.querySelector('h2'),links:[...n.querySelectorAll('a')]}));
+const groups=[...document.querySelectorAll('.side nav')].map(n=>({title:n.querySelector('h2'),links:[...n.querySelectorAll('a')]})).filter(g=>g.title&&g.links.length);
 const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 '+V+' '+V);
 const el=(tag,attrs,parent=svg)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.append(e);return e};
 const pt=(a,r)=>[C+r*Math.sin(a),C-r*Math.cos(a)]; // a=0 is 12 o'clock, clockwise
@@ -977,10 +992,12 @@ fitDial();new ResizeObserver(fitDial).observe(svg);
 const lens=a=>{minor.forEach(t=>{const f=a==null?0:Math.max(0,1-angDist(t.a,a)/.35),[x1,y1]=pt(t.a,R-10-f*18);t.l.setAttribute('x1',x1);t.l.setAttribute('y1',y1);t.l.style.opacity=.35+f*.65});
   let best=null,bd=9;marks.forEach(k=>{const d=a==null?9:angDist(k.a,a);k.m.classList.toggle('near',d<.16);if(d<bd){bd=d;best=k}});
   ctr.textContent=bd<.3?best.link.textContent:T('Pick a section')};
-svg.addEventListener('pointermove',e=>{const r=svg.getBoundingClientRect();lens((Math.atan2(e.clientX-r.left-r.width/2,-(e.clientY-r.top-r.height/2))+TAU)%TAU)});
-svg.addEventListener('pointerleave',()=>lens(null));
+let lensA=null,lensQ=0; // at most one lens update per frame
+svg.addEventListener('pointermove',e=>{const r=svg.getBoundingClientRect();lensA=(Math.atan2(e.clientX-r.left-r.width/2,-(e.clientY-r.top-r.height/2))+TAU)%TAU;
+  lensQ||=requestAnimationFrame(()=>{lensQ=0;lens(lensA)})});
+svg.addEventListener('pointerleave',()=>{cancelAnimationFrame(lensQ);lensQ=0;lens(null)});
 marks.forEach(k=>{k.m.addEventListener('focus',()=>lens(k.a));k.m.addEventListener('blur',()=>lens(null))});
-addEventListener('langchange',dialText);
+addEventListener('langchange',dialText);dialText();
 
 // ---- Time Machine: every item of a section becomes one slide, copied from the page itself (so /admin edits show up here) ----
 const tm=document.getElementById('tm'),stage=tm.querySelector('.tm-stage'),rail=tm.querySelector('.tm-rail'),gnav=tm.querySelector('.tm-groups'),count=tm.querySelector('.tm-count');
@@ -1001,17 +1018,21 @@ const SLIDES={
   '#principles':()=>{const c=cl(document.getElementById('principles'));c.querySelectorAll('p').forEach(p=>p.classList.add('lit'));return[c]},
   '#contact':()=>[cl(document.querySelector('#contact .contact'))],
 };
+// a sidebar link without its own recipe (or whose recipe no longer matches the page) shows its whole section as one slide
+const slidesFor=h=>{try{const s=SLIDES[h]?.();if(s?.length)return s}catch(e){}const sec=document.querySelector(h);if(!sec)return[];const c=cl(sec);c.querySelector('h2')?.remove();return[c]};
 let cards=[],cur=0;
 function openTM(gi,li){
-  const g=groups[gi];cards=[];stage.replaceChildren();rail.replaceChildren();let start=0;
-  g.links.forEach((link,i)=>{if(i===li)start=cards.length;(SLIDES[link.hash]?.()||[]).forEach((body,j,list)=>{
+  const g=groups[gi],decks=g.links.map(l=>slidesFor(l.hash));if(!decks.flat().length)return;
+  cards=[];stage.replaceChildren();rail.replaceChildren();let start=0;
+  g.links.forEach((link,i)=>{if(i===li)start=cards.length;decks[i].forEach((body,j,list)=>{
     const n=cards.length,c=document.createElement('article'),k=document.createElement('div');
     k.className='tm-kick';k.textContent=link.textContent+(list.length>1?' · '+(j+1)+'/'+list.length:'');
-    c.className='tm-card';c.setAttribute('aria-roledescription',T('Slides'));c.append(k,body);c.addEventListener('click',()=>{if(n!==cur)goTo(n)});stage.append(c);
+    c.className='tm-card';c.setAttribute('aria-roledescription',T('Slide'));c.append(k,body);c.addEventListener('click',()=>{if(n!==cur)goTo(n)});stage.append(c);
     const it=document.createElement('li'),b=document.createElement('button');b.type='button';b.textContent=j?'':link.textContent;b.setAttribute('aria-label',k.textContent);b.onclick=()=>goTo(n);it.append(b);rail.append(it);
     cards.push(c)})});
   gnav.replaceChildren(...groups.map((x,i)=>{const b=document.createElement('button');b.type='button';b.textContent=x.title.textContent;b.setAttribute('aria-pressed',i===gi);b.onclick=()=>openTM(i,0);return b}));
-  cur=start;layout();if(!tm.open)tm.showModal();
+  goTo(start);if(!tm.open)tm.showModal();
+  tm.focus(); // the clicked group button was just replaced; keep focus (and the keys) inside the dialog
 }
 const goTo=n=>{cur=Math.max(0,Math.min(cards.length-1,n));layout()};
 function layout(){
@@ -1026,27 +1047,26 @@ function layout(){
 tm.querySelector('.tm-x').onclick=()=>tm.close();
 tm.querySelector('.tm-prev').onclick=()=>goTo(cur-1);
 tm.querySelector('.tm-next').onclick=()=>goTo(cur+1);
-tm.addEventListener('keydown',e=>{const k={ArrowDown:1,ArrowRight:1,PageDown:1,ArrowUp:-1,ArrowLeft:-1,PageUp:-1}[e.key];
+const rtl=()=>document.documentElement.dir==='rtl';
+// on document, not the dialog: clicking a card or the stage drops focus to <body>
+document.addEventListener('keydown',e=>{if(!tm.open||cmd.open)return;
+  const k={ArrowDown:1,ArrowRight:rtl()?-1:1,PageDown:1,ArrowUp:-1,ArrowLeft:rtl()?1:-1,PageUp:-1}[e.key];
   if(k){goTo(cur+k);e.preventDefault()}else if(e.key==='Home'){goTo(0);e.preventDefault()}else if(e.key==='End'){goTo(cards.length-1);e.preventDefault()}});
 // wheel: one slide per gesture; a long card scrolls its own text first
-let wAcc=0,wLock=0;
+let wAcc=0,wLock=0,wLast=0;
 stage.addEventListener('wheel',e=>{const c=cards[cur];
   if(c&&c.contains(e.target)&&(e.deltaY>0?c.scrollTop+c.clientHeight<c.scrollHeight-1:c.scrollTop>0))return;
-  e.preventDefault();if(performance.now()<wLock)return;wAcc+=e.deltaY;
+  e.preventDefault();const now=performance.now();if(now<wLock)return;
+  if(now-wLast>250||Math.sign(e.deltaY)!==Math.sign(wAcc))wAcc=0; // a new gesture or a reversal starts from zero
+  wLast=now;wAcc+=e.deltaY;
   if(Math.abs(wAcc)>40){goTo(cur+(wAcc>0?1:-1));wAcc=0;wLock=performance.now()+450}},{passive:false});
 // touch: swipe sideways to change slide (vertical drag still scrolls a long card)
 let sx=0,sy=0;
 stage.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY});
-stage.addEventListener('pointerup',e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(e.pointerType!=='mouse'&&Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy))goTo(cur+(dx<0?1:-1))});
+stage.addEventListener('pointerup',e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(e.pointerType!=='mouse'&&Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy))goTo(cur+((dx<0)!==rtl()?1:-1))});
+}catch(err){console.error('explore / Time Machine disabled:',err);document.getElementById('explore')?.remove();document.getElementById('tm')?.remove()}
 
-// ---- dark / light toggle: default follows the OS, a click overrides and is remembered ----
-const themeBtn=document.getElementById('theme'),docEl=document.documentElement,osDark=matchMedia('(prefers-color-scheme: dark)');
-const isDark=()=>docEl.dataset.theme?docEl.dataset.theme==='dark':osDark.matches;
-const syncTheme=()=>themeBtn.setAttribute('aria-pressed',isDark());
-themeBtn.addEventListener('click',()=>{docEl.dataset.theme=isDark()?'light':'dark';try{localStorage.setItem('theme',docEl.dataset.theme)}catch(e){}syncTheme()});
-osDark.addEventListener('change',syncTheme);
-syncTheme();
-setLang(lang);
+
 </script>
 
 </body></html>
