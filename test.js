@@ -37,6 +37,10 @@ setTimeout(async () => {
     fs.mkdirSync(path.join(dir, 'fonts')); fs.writeFileSync(path.join(dir, 'fonts', 'geist-latin.woff2'), 'woff2');
     assert.equal((await fetch(base + '/fonts/geist-latin.woff2')).headers.get('content-type'), 'font/woff2');
     assert.match((await fetch(base + '/')).headers.get('content-security-policy'), /default-src 'self'/, 'pages carry a CSP');
+    assert.match(await (await fetch(base + '/robots.txt')).text(), /Sitemap: https:\/\/portfolio\.bgrlango\.store\/sitemap\.xml/);
+    assert.match(await (await fetch(base + '/sitemap.xml')).text(), /<lastmod>\d{4}-\d\d-\d\d<\/lastmod>/);
+    const missing = await fetch(base + '/no-such-page');
+    assert.equal(missing.status, 404); assert.match(missing.headers.get('content-type'), /text\/html/); assert.match(await missing.text(), /Back to the portfolio/);
     // version history: the backups (v1, v2) are listed and readable, only with the admin login, never outside data/history
     assert.equal((await fetch(base + '/admin/history')).status, 401);
     const asAdmin = u => fetch(base + u, { headers: { authorization: auth } }), versions = await (await asAdmin('/admin/history')).json();

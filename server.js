@@ -23,6 +23,9 @@ const authed = req => {
   return !!m && crypto.timingSafeEqual(sha(Buffer.from(m[1], 'base64').toString()), WANT);
 };
 const ADMIN = fs.readFileSync(path.join(__dirname, 'admin.html'));
+const ROBOTS = 'User-agent: *\nDisallow: /admin\nSitemap: https://portfolio.bgrlango.store/sitemap.xml\n';
+// Unknown public URLs get a small page in the site's colours instead of a bare "Not found".
+const NOT_FOUND = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Page not found · Supiana Sakti</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><style>@font-face{font-family:Geist;font-weight:400 600;src:url(/fonts/geist-latin.woff2) format("woff2")}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;box-sizing:border-box;font:16px/1.6 Geist,system-ui,sans-serif;background:#f6f6f4;color:#171716}main{max-width:420px}h1{font-size:27px;font-weight:500;letter-spacing:-.02em;margin:0 0 6px}p{margin:0 0 22px;color:#6b6b66}a{color:inherit;font-weight:500}@media (prefers-color-scheme:dark){body{background:#0e0e0d;color:#ededea}p{color:#84847d}}</style></head><body><main><h1>Page not found</h1><p>This page doesn't exist. <span lang="id">Halaman ini tidak ada.</span></p><a href="/">← Back to the portfolio</a></main></body></html>`;
 // Files next to the page in data/: the share image and the icons. /favicon.ico gets the PNG icon (browsers sniff it fine).
 const STATIC = { '/og.jpg': ['og.jpg', 'image/jpeg'], '/favicon.svg': ['favicon.svg', 'image/svg+xml'], '/apple-touch-icon.png': ['apple-touch-icon.png', 'image/png'], '/favicon.ico': ['apple-touch-icon.png', 'image/png'] };
 // HTML pages may only load from this origin (+ Cloudflare's analytics beacon). Inline script/style stay allowed: the page is one file.
@@ -81,12 +84,17 @@ http.createServer((req, res) => {
     const url = req.url.split('?')[0];
     if (url === '/' || url === '/index.html') return send(res, 200, fs.readFileSync(PAGE), undefined, { 'Cache-Control': 'no-cache' });
     if (url === '/healthz') return send(res, 200, 'ok', 'text/plain');
+    if (url === '/robots.txt') return send(res, 200, ROBOTS, 'text/plain; charset=utf-8');
+    if (url === '/sitemap.xml') { // lastmod follows the page file, so every /admin save updates it
+      const day = fs.statSync(PAGE).mtime.toISOString().slice(0, 10);
+      return send(res, 200, `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://portfolio.bgrlango.store/</loc><lastmod>${day}</lastmod></url></urlset>\n`, 'application/xml; charset=utf-8');
+    }
     const font = /^\/fonts\/([\w-]+\.woff2)$/.exec(url), file = font ? ['fonts/' + font[1], 'font/woff2'] : STATIC[url];
     if (file) {
       let buf; try { buf = fs.readFileSync(path.join(DATA, file[0])); } catch { return send(res, 404, 'Not found', 'text/plain'); }
       return send(res, 200, buf, file[1], { 'Cache-Control': font ? 'public, max-age=31536000, immutable' : 'public, max-age=86400' });
     }
-    if (url !== '/admin' && !url.startsWith('/admin/')) return send(res, 404, 'Not found', 'text/plain');
+    if (url !== '/admin' && !url.startsWith('/admin/')) return send(res, 404, NOT_FOUND);
 
     const ip = client(req);
     if (locked(ip)) return send(res, 429, 'Terlalu banyak login gagal. Coba lagi dalam 15 menit.', 'text/plain; charset=utf-8');
