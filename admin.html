@@ -56,6 +56,23 @@ const fromVis=()=>{
 };
 const current=()=>mode==='vis'?fromVis():ta.value;
 
+// The page translates by exact English text (#i18n keys). Before saving, list the English texts this edit introduced
+// without a translation (id/ar/ja visitors would see English). Texts that were already untranslated (names, tags) aren't listed.
+const INLINE=/^(SPAN|EM|B|STRONG|I|SMALL|KBD|BR|TIME|A|CODE)$/,parse=h=>new DOMParser().parseFromString(h,'text/html');
+const untranslated=html=>{
+  const d=parse(html),norm=s=>s.trim().replace(/\s+/g,' '),out=new Set();let dict={};
+  try{dict=JSON.parse(d.getElementById('i18n').textContent)}catch(e){}
+  if(d.title&&!dict[d.title])out.add(d.title);
+  for(const e of d.body.querySelectorAll('*')){
+    if(e.closest('script,style,svg,canvas,noscript,template'))continue;
+    if(![...e.childNodes].some(n=>n.nodeType===3&&/\p{L}/u.test(n.data)))continue; // no words of its own
+    if([...e.children].some(c=>!INLINE.test(c.tagName)))continue; // a container: its children are the units
+    const k=norm(e.innerHTML);if(!dict[k])out.add(k);
+  }
+  return out;
+};
+let base=new Set(); // untranslated texts of the version on the server
+
 const tab=m=>{
   if(m===mode)return;
   if(m==='html')ta.value=fromVis();else vis.srcdoc=ta.value;
@@ -67,11 +84,15 @@ $('t-vis').onclick=()=>tab('vis');$('t-html').onclick=()=>tab('html');
 ta.addEventListener('input',mark);
 
 const save=async()=>{
+  const html=current(),fresh=[...untranslated(html)].filter(t=>!base.has(t));
+  if(fresh.length&&!confirm(`${fresh.length} teks baru/berubah belum punya terjemahan, jadi tampil dalam bahasa Inggris di versi Indonesia, Arab, dan Jepang:\n\n`+
+    fresh.slice(0,8).map(t=>'• '+parse(t).body.textContent.slice(0,90)).join('\n')+(fresh.length>8?`\n…dan ${fresh.length-8} lainnya`:'')+
+    '\n\nTerjemahan ditambahkan di tab HTML, di <script id="i18n">, dengan format "teks Inggris persis":["Indonesia","Arab","Jepang"].\n\nTetap simpan?'))return say('Belum disimpan');
   say('Menyimpan…');
   try{
-    const r=await fetch(location.origin+'/admin/source',{method:'PUT',headers:{'x-admin':'1','Content-Type':'text/html; charset=utf-8'},body:current()});
-    if(!r.ok)throw new Error(await r.text());
-    dirty=false;say('Tersimpan ✓ '+new Date().toLocaleTimeString('id-ID'));
+    const r=await fetch(location.origin+'/admin/source',{method:'PUT',headers:{'x-admin':'1','Content-Type':'text/html; charset=utf-8'},body:html});
+    if(!r.ok){const t=await r.text();if(r.status===400)alert(t);throw new Error(t.split('\n')[0])} // 400 = the server's page check, which lists every problem
+    dirty=false;base=untranslated(html);say('Tersimpan ✓ '+new Date().toLocaleTimeString('id-ID'));
   }catch(e){say('Gagal: '+e.message)}
 };
 $('save').onclick=save;
@@ -80,5 +101,5 @@ addEventListener('keydown',key);
 addEventListener('beforeunload',e=>{if(dirty)e.preventDefault()});
 
 fetch(location.origin+'/admin/source').then(r=>r.ok?r.text():Promise.reject(r.status))
-  .then(src=>{vis.srcdoc=src;say('Siap')},e=>say('Gagal memuat: '+e));
+  .then(src=>{vis.srcdoc=src;base=untranslated(src);say('Siap')},e=>say('Gagal memuat: '+e));
 </script></body></html>

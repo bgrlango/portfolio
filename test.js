@@ -19,6 +19,16 @@ setTimeout(async () => {
     const hist = fs.readdirSync(path.join(dir, 'history'));
     assert.equal(hist.length, 1);
     assert.match(fs.readFileSync(path.join(dir, 'history', hist[0]), 'utf8'), /v1/, 'backup holds previous version');
+    // save guard: the real page passes; a script syntax error, broken #i18n JSON or a menu link to a missing section is refused
+    const page = fs.readFileSync(path.join(__dirname, 'data', 'index.html'), 'utf8');
+    assert.equal((await put(page)).status, 200, 'shipped page passes the save check');
+    const guardLine = page.split('\n').findIndex(l => l.startsWith('const guard=')) + 1;
+    for (const [bad, why] of [
+      [page.replace('const guard=', 'const guard=('), new RegExp(`Error di script baris ${guardLine}:`)],
+      [page.replace('"Explore":[', '"Explore":[,'), /Kamus terjemahan/],
+      [page.replace('<li><a href="#contact">Contact</a></li>', '<li><a href="#certs">Certs</a></li>'), /Link menu "#certs"/],
+    ]) { const r = await put(bad); assert.equal(r.status, 400); assert.match(await r.text(), why); }
+    assert.match(await (await fetch(base + '/')).text(), /const guard=\(name/, 'refused saves leave the live page untouched');
     const wrong = { headers: { authorization: 'Basic ' + Buffer.from('admin:guess').toString('base64') } };
     for (let i = 0; i < 20; i++) await fetch(base + '/admin', wrong);
     assert.equal((await fetch(base + '/admin', { headers: { authorization: auth } })).status, 429, 'locked after 20 wrong logins');

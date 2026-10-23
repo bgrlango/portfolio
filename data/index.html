@@ -744,28 +744,46 @@ html:has(#tm[open]){overflow:hidden}
 }
 </script>
 <script>
+// Every feature below runs in its own guard: an /admin edit that breaks one (a removed element or section)
+// switches off only that feature, not the whole page. A syntax error still stops everything, so /admin refuses to save one.
+const guard=(name,f)=>{try{f()}catch(e){console.error('['+name+'] disabled:',e)}};
+const calm=matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(calm)document.querySelector('#wave animate')?.remove(); // freeze the hover wave filter (pauseAnimations() gets reset when the page finishes loading)
+const byHash=h=>document.getElementById(h.slice(1)); // unlike querySelector, never throws (e.g. on "#2026")
+const links=[...document.querySelectorAll('.side nav a')],cmd=document.getElementById('cmd'); // shared by scroll-spy, command menu, Time Machine
+
 // live Jakarta clock
+guard('clock',()=>{
 const clock=document.getElementById('clock');
 const tick=()=>clock.textContent=new Date().toLocaleTimeString('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit'});
 tick();setInterval(tick,15000);
+});
 
 // ---- languages: the English HTML is the source; #i18n maps that English HTML to [id, ar, ja] ----
-// ponytail: keyed by the English text, so an English line edited in /admin simply stays English until #i18n gets the new key
-const I18N=JSON.parse(document.getElementById('i18n').textContent),LANGS=['en','id','ar','ja'];
+// ponytail: keyed by the English text, so an English line edited in /admin stays English until #i18n gets the new key (/admin warns on save)
+let I18N={};try{I18N=JSON.parse(document.getElementById('i18n').textContent)}catch(e){console.error('#i18n missing or not valid JSON, page stays in English:',e)}
+const LANGS=['en','id','ar','ja'];
 let lang=LANGS.includes(document.documentElement.lang)?document.documentElement.lang:'en';
 const T=s=>{const i=LANGS.indexOf(lang)-1;return i<0?s:(I18N[s]?.[i]??s)};
 const norm=s=>s.trim().replace(/\s+/g,' ');
 const trText=[...document.body.querySelectorAll('*')].filter(e=>!e.closest('script')&&I18N[norm(e.innerHTML)]).map(e=>[e,norm(e.innerHTML)]);
 const trAttr=[...document.querySelectorAll('[aria-label],[placeholder]')].flatMap(e=>['aria-label','placeholder'].filter(a=>I18N[e.getAttribute(a)]).map(a=>[e,a,e.getAttribute(a)]));
 const title0=document.title,langSel=document.getElementById('lang');
+// current job duration, computed live and localized (Intl handles plurals, e.g. Arabic)
+const durations=()=>document.querySelectorAll('[data-from]').forEach(el=>{
+  const [y,m]=el.dataset.from.split('-').map(Number),n=new Date(),t=(n.getFullYear()-y)*12+(n.getMonth()+1-m)+1,Y=t/12|0,M=t%12;
+  const f=(v,u)=>v?new Intl.NumberFormat(lang,{style:'unit',unit:u,unitDisplay:'long'}).format(v):'';
+  el.textContent=[f(Y,'year'),f(M,'month')].filter(Boolean).join(' ');
+});
 function setLang(l){
-  lang=LANGS.includes(l)?l:'en';const d=document.documentElement;d.lang=lang;d.dir=lang==='ar'?'rtl':'ltr';langSel.value=lang;
+  lang=LANGS.includes(l)?l:'en';const d=document.documentElement;d.lang=lang;d.dir=lang==='ar'?'rtl':'ltr';if(langSel)langSel.value=lang;
   trText.forEach(([e,k])=>e.innerHTML=T(k));trAttr.forEach(([e,a,k])=>e.setAttribute(a,T(k)));
   document.title=T(title0);durations();dispatchEvent(new Event('langchange')); // hero canvas repaints the name on the new side
 }
-langSel.addEventListener('change',()=>{setLang(langSel.value);try{localStorage.setItem('lang',lang)}catch(e){}});
+langSel?.addEventListener('change',()=>{setLang(langSel.value);try{localStorage.setItem('lang',lang)}catch(e){}});
 
 // cursor-follow project preview (lerped)
+guard('project preview',()=>{
 const pv=document.getElementById('preview'),art=document.getElementById('art'),tag=document.getElementById('tag');
 let mx=0,my=0,x=0,y=0,raf;
 const loop=()=>{x+=(mx-x)*.16;y+=(my-y)*.16;pv.style.transform=`translate(${x-120}px,${y-90}px) scale(${pv.classList.contains('on')?1:.85}) rotate(${(mx-x)*.04}deg)`;raf=requestAnimationFrame(loop)};
@@ -775,11 +793,13 @@ document.querySelectorAll('#projects .row').forEach(r=>{
 });
 addEventListener('mousemove',e=>{mx=e.clientX+140;my=e.clientY});
 loop();
+});
 
 // spring toggle
 document.querySelectorAll('.sw').forEach(s=>s.addEventListener('click',()=>s.setAttribute('aria-checked',s.getAttribute('aria-checked')!=='true')));
 
 // dot field reacting to pointer
+guard('dot field',()=>{
 const cv=document.getElementById('dots'),ctx=cv.getContext('2d');
 let W,H,px=-999,py=-999;
 const size=()=>{const r=cv.getBoundingClientRect(),d=devicePixelRatio||1;W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0)};
@@ -799,28 +819,35 @@ const draw=t=>{
   ctx.globalAlpha=1;requestAnimationFrame(draw);
 };
 requestAnimationFrame(draw);
+});
 
 // text scramble
+guard('text scramble',()=>{
 const scr=document.getElementById('scr'),word=scr.textContent,chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&*+';
 let busy=false;
 const scramble=()=>{if(busy||calm)return;busy=true;let f=0;const id=setInterval(()=>{
   scr.textContent=[...word].map((c,i)=>i<f/2?c:chars[Math.random()*chars.length|0]).join('');
   if(++f>word.length*2){clearInterval(id);scr.textContent=word;busy=false}},40)};
 scr.addEventListener('mouseenter',scramble);scr.addEventListener('focus',scramble);
+});
 
 // principles light up one by one as they scroll into view (all visible at rest)
+guard('principles',()=>{
 const ps=[...document.querySelectorAll('#principles p')];
 new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)ps.forEach((p,i)=>setTimeout(()=>p.classList.add('lit'),i*260))}),{threshold:.4}).observe(document.getElementById('principles'));
 // ponytail: if the observer never fires (thumbnail capture), light everything after 3s
 setTimeout(()=>ps.forEach(p=>p.classList.add('lit')),3000);
+});
 
-// scroll-spy for sidebar
-const links=[...document.querySelectorAll('.side nav a')];
+// scroll-spy for sidebar (a menu link whose section is gone is skipped)
+guard('scroll-spy',()=>{
 const spy=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)links.forEach(a=>a.classList.toggle('on',a.hash==='#'+e.target.id))}),{rootMargin:'-40% 0px -55% 0px'});
-links.forEach(a=>spy.observe(document.querySelector(a.hash)));
+links.forEach(a=>{const s=byHash(a.hash);if(s)spy.observe(s)});
+});
 
 // command menu: ⌘K / Ctrl+K / "/"
-const cmd=document.getElementById('cmd'),q=document.getElementById('q'),res=document.getElementById('results');
+guard('command menu',()=>{
+const q=document.getElementById('q'),res=document.getElementById('results');
 const items=()=>[...links.map(a=>({t:a.textContent,k:T('Section'),h:a.hash})),
   ...[...document.querySelectorAll('#projects .row .t')].map(t=>({t:t.textContent,k:T('Project'),h:'#projects-s'})),
   {t:T('Copy email'),k:T('Action'),run:()=>document.getElementById('copy').click()},
@@ -833,7 +860,7 @@ const render=()=>{const v=q.value.toLowerCase();shown=items().filter(i=>i.t.toLo
   shown.forEach((i,n)=>{const li=document.createElement('li');li.setAttribute('role','option');li.setAttribute('aria-selected',n===sel);
     li.innerHTML='<span></span><small></small>';li.firstChild.textContent=i.t;li.lastChild.textContent=i.k;
     li.onmouseenter=()=>{sel=n;render()};li.onclick=()=>go(i);res.append(li)})};
-const go=i=>{if(!i)return;cmd.close();i.run?i.run():document.querySelector(i.h).scrollIntoView({behavior:calm?'auto':'smooth'})};
+const go=i=>{if(!i)return;cmd.close();i.run?i.run():byHash(i.h)?.scrollIntoView({behavior:calm?'auto':'smooth'})};
 const openCmd=()=>{if(cmd.open)return;q.value='';sel=0;render();cmd.showModal();q.focus()};
 document.getElementById('open-k').addEventListener('click',openCmd);
 q.addEventListener('input',()=>{sel=0;render()});
@@ -842,17 +869,14 @@ q.addEventListener('keydown',e=>{if(e.key==='ArrowDown'){sel=(sel+1)%shown.lengt
   else if(e.key==='Enter')go(shown[sel])});
 cmd.addEventListener('click',e=>{if(e.target===cmd)cmd.close()});
 addEventListener('keydown',e=>{if((e.key==='k'&&(e.metaKey||e.ctrlKey))||(e.key==='/'&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName))){e.preventDefault();openCmd()}});
-
-// current job duration, computed live and localized (Intl handles plurals, e.g. Arabic)
-const durations=()=>document.querySelectorAll('[data-from]').forEach(el=>{
-  const [y,m]=el.dataset.from.split('-').map(Number),n=new Date(),t=(n.getFullYear()-y)*12+(n.getMonth()+1-m)+1,Y=t/12|0,M=t%12;
-  const f=(v,u)=>v?new Intl.NumberFormat(lang,{style:'unit',unit:u,unitDisplay:'long'}).format(v):'';
-  el.textContent=[f(Y,'year'),f(M,'month')].filter(Boolean).join(' ');
 });
+
 // experience line fills as you scroll
+guard('timeline',()=>{
 const tl=document.getElementById('tl');
 const fill=()=>{const r=tl.getBoundingClientRect();tl.style.setProperty('--p',Math.min(1,Math.max(0,(innerHeight*.6-r.top)/r.height)))};
-addEventListener('scroll',fill,{passive:true});fill();
+fill();addEventListener('scroll',fill,{passive:true});
+});
 // progress bars animate in
 const bio=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('go');bio.unobserve(e.target)}}),{threshold:.5});
 document.querySelectorAll('.bar').forEach(b=>bio.observe(b));
@@ -870,11 +894,8 @@ document.addEventListener('click',e=>{
   navigator.clipboard.writeText(text).then(()=>done(T('Copied ✓')),()=>{const p=b.previousElementSibling,t=p?.classList.contains('mail')?p:src;if(t)getSelection().selectAllChildren(t);done(T('Press Ctrl+C'))});
 });
 
-const calm=matchMedia('(prefers-reduced-motion: reduce)').matches;
-if(calm)document.querySelector('#wave animate').remove(); // freeze the hover wave filter (pauseAnimations() gets reset when the page finishes loading)
-
 // ---- hero: water ripple simulation refracting a colorful gradient + the name ----
-(()=>{
+guard('hero water',()=>{
   const hero=document.getElementById('hero'),cv=document.getElementById('water'),g=cv.getContext('2d');
   const tex=document.createElement('canvas'),tg=tex.getContext('2d',{willReadFrequently:true});
   let w=0,h=0,k=1,cur,prev,out,img,src,frame=0,visible=true,last=0,lx=-1,ly=-1,band=[0,0];
@@ -932,10 +953,10 @@ if(calm)document.querySelector('#wave animate').remove(); // freeze the hover wa
   new IntersectionObserver(([e])=>visible=e.isIntersecting).observe(hero);
   let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(size,120)}).observe(hero);
   document.fonts.ready.then(()=>{size();if(!calm)drop(w*.3,h*.5,8,1200);requestAnimationFrame(step)});
-})();
+});
 
 // ---- liquid cursor lens with ripple trail (fine pointers only) ----
-if(!calm&&matchMedia('(pointer: fine)').matches){
+if(!calm&&matchMedia('(pointer: fine)').matches)guard('cursor',()=>{
   const c=document.getElementById('cursor');let cx=0,cy=0,tx=0,ty=0,sc=1,ts=1,ox=0,oy=0;
   addEventListener('pointermove',e=>{
     tx=e.clientX;ty=e.clientY;c.classList.add('on');
@@ -948,16 +969,17 @@ if(!calm&&matchMedia('(pointer: fine)').matches){
   document.addEventListener('pointerleave',()=>c.classList.remove('on'));
   const tickC=()=>{cx+=(tx-cx)*.22;cy+=(ty-cy)*.22;sc+=(ts-sc)*.18;c.style.transform=`translate(${cx}px,${cy}px) scale(${sc})`;requestAnimationFrame(tickC)};
   tickC();
-}
+});
 
 // ---- dark / light toggle: default follows the OS, a click overrides and is remembered ----
+guard('theme',()=>{
 const themeBtn=document.getElementById('theme'),docEl=document.documentElement,osDark=matchMedia('(prefers-color-scheme: dark)');
 const isDark=()=>docEl.dataset.theme?docEl.dataset.theme==='dark':osDark.matches;
 const syncTheme=()=>themeBtn.setAttribute('aria-pressed',isDark());
 themeBtn.addEventListener('click',()=>{docEl.dataset.theme=isDark()?'light':'dark';try{localStorage.setItem('theme',docEl.dataset.theme)}catch(e){}syncTheme()});
 osDark.addEventListener('change',syncTheme);
 syncTheme();
-setLang(lang);
+});
 
 // explore + Time Machine are extras: if /admin edits break their assumptions, drop the section instead of the page
 try{
@@ -1019,7 +1041,7 @@ const SLIDES={
   '#contact':()=>[cl(document.querySelector('#contact .contact'))],
 };
 // a sidebar link without its own recipe (or whose recipe no longer matches the page) shows its whole section as one slide
-const slidesFor=h=>{try{const s=SLIDES[h]?.();if(s?.length)return s}catch(e){}const sec=document.querySelector(h);if(!sec)return[];const c=cl(sec);c.querySelector('h2')?.remove();return[c]};
+const slidesFor=h=>{try{const s=SLIDES[h]?.();if(s?.length)return s}catch(e){}const sec=byHash(h);if(!sec)return[];const c=cl(sec);c.querySelector('h2')?.remove();return[c]};
 let cards=[],cur=0;
 function openTM(gi,li){
   const g=groups[gi],decks=g.links.map(l=>slidesFor(l.hash));if(!decks.flat().length)return;
@@ -1049,7 +1071,7 @@ tm.querySelector('.tm-prev').onclick=()=>goTo(cur-1);
 tm.querySelector('.tm-next').onclick=()=>goTo(cur+1);
 const rtl=()=>document.documentElement.dir==='rtl';
 // on document, not the dialog: clicking a card or the stage drops focus to <body>
-document.addEventListener('keydown',e=>{if(!tm.open||cmd.open)return;
+document.addEventListener('keydown',e=>{if(!tm.open||cmd?.open)return;
   const k={ArrowDown:1,ArrowRight:rtl()?-1:1,PageDown:1,ArrowUp:-1,ArrowLeft:rtl()?1:-1,PageUp:-1}[e.key];
   if(k){goTo(cur+k);e.preventDefault()}else if(e.key==='Home'){goTo(0);e.preventDefault()}else if(e.key==='End'){goTo(cards.length-1);e.preventDefault()}});
 // wheel: one slide per gesture; a long card scrolls its own text first
@@ -1065,6 +1087,9 @@ let sx=0,sy=0;
 stage.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY});
 stage.addEventListener('pointerup',e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(e.pointerType!=='mouse'&&Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy))goTo(cur+((dx<0)!==rtl()?1:-1))});
 }catch(err){console.error('explore / Time Machine disabled:',err);document.getElementById('explore')?.remove();document.getElementById('tm')?.remove()}
+
+// translate last: the blocks above read their English labels first (copy buttons keep theirs to restore after "Copied ✓")
+setLang(lang);
 
 
 </script>

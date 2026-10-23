@@ -1,6 +1,6 @@
 // Portfolio server: serves data/index.html publicly, /admin edits it (Basic Auth).
 // Node stdlib only — no npm install, no build step.
-const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
+const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto'), vm = require('vm');
 
 const DATA = process.env.DATA_DIR || '/data';
 const PAGE = path.join(DATA, 'index.html'), HIST = path.join(DATA, 'history');
@@ -27,6 +27,27 @@ const send = (res, code, body, type = 'text/html; charset=utf-8', extra = {}) =>
   res.end(body);
 };
 
+// Refuse a save that would break the live page: a script syntax error (stops every feature on it), a translation
+// dictionary that is no longer JSON, or a menu link whose section is gone. ponytail: regex over our own page, not an HTML parser.
+const check = html => {
+  const out = [], line = i => html.slice(0, i).split('\n').length;
+  for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+    const [, attrs, code] = m;
+    if (/\bsrc=/i.test(attrs)) continue;
+    if (/application\/json/i.test(attrs)) {
+      try { JSON.parse(code); } catch (e) { out.push(`Kamus terjemahan (script JSON, baris ${line(m.index)}) tidak valid: ${e.message}`); }
+    } else {
+      try { new vm.Script(code, { filename: 'page', lineOffset: line(m.index) - 1 }); } // compiles only, never runs
+      catch (e) { out.push(`Error di script baris ${(/page:(\d+)/.exec(e.stack) || [, line(m.index)])[1]}: ${e.message}`); }
+    }
+  }
+  const bare = html.replace(/<!--[\s\S]*?-->/g, ''); // a commented-out menu link doesn't count
+  const ids = new Set([...bare.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]));
+  const side = (/<aside\b[^>]*class="side\b[\s\S]*?<\/aside>/i.exec(bare) || [''])[0];
+  for (const [, id] of side.matchAll(/\bhref="#([^"]+)"/g)) if (!ids.has(id)) out.push(`Link menu "#${id}" tidak punya bagian dengan id="${id}"`);
+  return out;
+};
+
 const save = (req, res) => {
   const chunks = []; let size = 0;
   req.on('data', c => { size += c.length; if (size > 5e6) { send(res, 413, 'Too large', 'text/plain'); req.destroy(); } else chunks.push(c); });
@@ -34,6 +55,8 @@ const save = (req, res) => {
     if (res.writableEnded) return;
     const html = Buffer.concat(chunks);
     if (!/<html/i.test(html.toString('utf8', 0, 2000))) return send(res, 400, 'Isi bukan halaman HTML — tidak disimpan', 'text/plain; charset=utf-8');
+    const problems = check(html.toString('utf8'));
+    if (problems.length) return send(res, 400, 'Tidak disimpan, halaman akan rusak:\n- ' + problems.join('\n- '), 'text/plain; charset=utf-8');
     try {
       // ponytail: history grows forever (~50 KB/save); prune data/history by hand if it ever matters
       fs.mkdirSync(HIST, { recursive: true });
