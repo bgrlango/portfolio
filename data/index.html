@@ -103,7 +103,7 @@ h1 em,.h1 em{font:italic 400 1.08em var(--serif);color:var(--soft)}
 section{display:grid;gap:18px}
 .label{margin:0;font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);display:flex;justify-content:space-between}
 
-/* project list with cursor-follow preview */
+/* project list */
 .list{list-style:none;margin:0;padding:0}
 .row{display:grid;grid-template-columns:1fr auto;gap:16px;padding:13px 0;border-top:1px solid var(--line);align-items:baseline;transition:opacity .25s,padding .35s var(--ease)}
 .row:last-child{border-bottom:1px solid var(--line)}
@@ -112,12 +112,6 @@ section{display:grid;gap:18px}
 .row .y{font:12px var(--mono);color:var(--mute);font-variant-numeric:tabular-nums}
 .list:hover .row{opacity:.35}
 .list .row:hover{opacity:1;padding-inline-start:8px}
-.preview{position:fixed;left:0;top:0;width:240px;aspect-ratio:4/3;border-radius:10px;pointer-events:none;z-index:20;
-  opacity:0;transform:translate(-50%,-50%) scale(.85);transition:opacity .25s,transform .35s var(--ease);overflow:hidden;
-  box-shadow:0 20px 50px -12px #0006}
-.preview.on{opacity:1}
-.art{position:absolute;inset:0;display:grid;place-items:center;font:500 12px var(--mono);color:#fff;letter-spacing:.04em}
-@media (hover:none){.preview{display:none}}
 
 /* sample artwork (pure CSS "images") */
 .a1{background:radial-gradient(circle at 70% 30%,#ffb86b,transparent 45%),linear-gradient(135deg,#ff5b1f,#7a1d00)}
@@ -127,7 +121,6 @@ section{display:grid;gap:18px}
 .a4{background:linear-gradient(#e9e4d8,#cfc6b0)}
 .a4::before{content:"";position:absolute;inset:18% 22%;border-radius:8px;background:#fff;box-shadow:0 12px 30px -8px #0004,inset 0 22px 0 #f1ede4}
 .a5{background:radial-gradient(circle at 50% 120%,#f472b6,transparent 60%),#1a1025}
-.art span{position:relative;z-index:1;background:#0005;padding:4px 8px;border-radius:99px;backdrop-filter:blur(6px)}
 @keyframes float{50%{transform:translateY(-8px)}}
 
 /* craft grid */
@@ -237,6 +230,9 @@ details[open] summary .tog::before{content:var(--hide)}
 details ul{margin:0;padding:0 14px 14px;padding-inline-start:30px;color:var(--soft);display:grid;gap:6px;font-size:13.5px}
 details ul li::marker{color:var(--accent)}
 details[open] ul{animation:rise .5s var(--ease)}
+.row>details{grid-column:1/-1;background:none;border-radius:0}
+.row summary{padding:0;gap:2px 16px}
+.row details ul{padding:10px 0 2px;padding-inline-start:18px}
 .now-tag{display:inline-block;margin-inline-start:8px;font:500 12px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);padding:3px 6px;border-radius:99px;vertical-align:2px}
 .skills{display:grid;gap:14px}
 .sk{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:start}
@@ -425,7 +421,7 @@ html:has(#tm[open]){overflow:hidden}
   <nav class="links in" style="--i:3" aria-label="Links">
     <a href="https://github.com/bgrlango" target="_blank" rel="noopener">GitHub</a>
     <a href="https://www.linkedin.com/in/supiana-sakti-paraggi-870708227/" target="_blank" rel="noopener">LinkedIn</a>
-    <a href="https://wms.bgrlango.store" target="_blank" rel="noopener">WMS demo</a>
+    <a href="#projects-s">Projects</a><!-- WMS demo hidden until the demo account exists. To show it again, put back: <a href="https://wms.bgrlango.store" target="_blank" rel="noopener">WMS demo</a> -->
     <a href="#contact">Contact</a>
   </nav>
 </section>
@@ -542,11 +538,32 @@ html:has(#tm[open]){overflow:hidden}
   </section>
 
   <section id="projects-s" class="in" style="--i:5" aria-labelledby="p-h">
-    <h2 class="label" id="p-h"><span>Projects</span> <span class="hover-hint" aria-hidden="true">Hover to preview</span></h2>
+    <h2 class="label" id="p-h"><span>Projects</span></h2>
     <ul class="list" id="projects">
-      <li class="row" data-art="a1" data-tag="WMS · MES · MRP · ERP"><span><span class="t">Topline WMS → ERP</span><span class="d">Web &amp; Android · live: WMS, MES, MRP, sales &amp; shipping · next: purchasing</span></span><span class="y">2023 — now</span></li>
-      <li class="row" data-art="a2" data-tag="E-commerce"><span><span class="t">Book Retail Store</span><span class="d">In testing before launch</span></span><span class="y">2026</span></li>
-      <li class="row" data-art="a5" data-tag="AI agent"><span><span class="t">Personal AI Assistant</span><span class="d">Live 24/7 for 6+ months</span></span><span class="y">2025</span></li>
+      <li class="row" data-art="a1" data-tag="WMS · MES · MRP · ERP"><details open="">
+        <summary><span><span class="t">Topline WMS → ERP</span><span class="d">Web &amp; Android · live: WMS, MES, MRP, sales, shipping &amp; purchasing</span></span><span class="y">2023 — now</span><span class="tog"></span></summary>
+        <ul>
+          <li>One system for stock, injection-molding production, QC, sales, delivery notes and purchasing, used from phones on the floor and the web in the office.</li>
+          <li>Led the build of all four parts: an Android scanner app (Kotlin), a Node.js API on PostgreSQL, a React web admin and a Python service for labels and PDF forms.</li>
+          <li>470+ automated tests, two-factor login, per-department access and an audit trail of every change. A scan resent over weak Wi-Fi is never counted twice.</li>
+        </ul>
+      </details></li>
+      <li class="row" data-art="a2" data-tag="E-commerce"><details>
+        <summary><span><span class="t">Book Retail Store</span><span class="d">Book catalog with WhatsApp checkout</span></span><span class="y">2026</span><span class="tog"></span></summary>
+        <ul>
+          <li>Online bookstore where checkout sends the order straight to the seller's WhatsApp, so no payment gateway is needed.</li>
+          <li>Admin panel for books, orders and stock; stock is deducted in a single database transaction when an order is marked paid.</li>
+          <li>React and Tailwind front end, Express API and PostgreSQL in Docker, built end to end from a written product spec.</li>
+        </ul>
+      </details></li>
+      <li class="row" data-art="a5" data-tag="AI agent"><details>
+        <summary><span><span class="t">Personal AI Assistant</span><span class="d">Live 24/7 for 6+ months</span></span><span class="y">2025</span><span class="tog"></span></summary>
+        <ul>
+          <li>WhatsApp assistant on my own home server: morning reports, server health checks and security patrols, around the clock.</li>
+          <li>Separate agent crews for finance, server operations and security; anything risky waits for my approval in chat.</li>
+          <li>Moved from OpenClaw to Hermes Agent and CrewAI in gated stages, each passing fault-injection and security tests before the next.</li>
+        </ul>
+      </details></li>
       <li class="row" data-art="a3" data-tag="GCP · Security"><span><span class="t">Freelance IT Consulting</span><span class="d">Servers, cloud, hardening</span></span><span class="y">Ongoing</span></li>
     </ul>
   </section>
@@ -610,7 +627,6 @@ html:has(#tm[open]){overflow:hidden}
 </dialog>
 
 <div class="cursor" id="cursor" aria-hidden="true"></div>
-<div class="preview" id="preview" aria-hidden="true"><div class="art" id="art"><span id="tag"></span></div></div>
 
 <script type="application/json" id="i18n">
 {
@@ -693,15 +709,23 @@ html:has(#tm[open]){overflow:hidden}
 "Coding<small>side projects</small>":["Ngoding<small>proyek sampingan</small>","البرمجة<small>مشاريع جانبية</small>","コーディング<small>個人開発</small>"],
 "CAD design<small>AutoCAD</small>":["Desain CAD<small>AutoCAD</small>","تصميم CAD<small>AutoCAD</small>","CAD設計<small>AutoCAD</small>"],
 "Automotive<small>engines</small>":["Otomotif<small>mesin</small>","السيارات<small>المحركات</small>","自動車<small>エンジン</small>"],
-"Hover to preview":["Arahkan kursor untuk pratinjau","مرّر المؤشر للمعاينة","ホバーでプレビュー"],
-"Web &amp; Android · live: WMS, MES, MRP, sales &amp; shipping · next: purchasing":["Web &amp; Android · live: WMS, MES, MRP, penjualan &amp; pengiriman · berikutnya: pembelian","ويب وأندرويد · يعمل الآن: WMS وMES وMRP والمبيعات والشحن · التالي: المشتريات","Web・Android · 稼働中：WMS・MES・MRP・販売・出荷 · 次：購買"],
+"Web &amp; Android · live: WMS, MES, MRP, sales, shipping &amp; purchasing":["Web &amp; Android · live: WMS, MES, MRP, penjualan, pengiriman &amp; pembelian","ويب وأندرويد · يعمل الآن: WMS وMES وMRP والمبيعات والشحن والمشتريات","Web・Android · 稼働中：WMS・MES・MRP・販売・出荷・購買"],
 "2023 — now":["2023 — sekarang","2023 — الآن","2023年 — 現在"],
 "Book Retail Store":["Toko Buku","متجر لبيع الكتب","書籍販売ストア"],
-"In testing before launch":["Tahap uji sebelum peluncuran","قيد الاختبار قبل الإطلاق","公開前テスト中"],
+"Book catalog with WhatsApp checkout":["Katalog buku dengan checkout lewat WhatsApp","كتالوج كتب مع إتمام الطلب عبر واتساب","WhatsAppで注文できる書籍カタログ"],
 "Personal AI Assistant":["Asisten AI Pribadi","مساعد ذكاء اصطناعي شخصي","パーソナルAIアシスタント"],
 "Live 24/7 for 6+ months":["Berjalan 24/7 selama 6+ bulan","يعمل على مدار الساعة منذ أكثر من 6 أشهر","6か月以上24時間稼働中"],
 "Freelance IT Consulting":["Konsultan IT Lepas","استشارات تقنية مستقلة","フリーランスITコンサルティング"],
 "Servers, cloud, hardening":["Server, cloud, hardening","خوادم، سحابة، تعزيز الأمان","サーバー・クラウド・堅牢化"],
+"One system for stock, injection-molding production, QC, sales, delivery notes and purchasing, used from phones on the floor and the web in the office.":["Satu sistem untuk stok, produksi injection molding, QC, penjualan, surat jalan, dan pembelian; dipakai lewat HP di lantai produksi dan lewat web di kantor.","نظام واحد للمخزون وإنتاج قولبة الحقن ومراقبة الجودة والمبيعات وإشعارات التسليم والمشتريات، يُستخدم عبر الهواتف في أرض المصنع وعبر الويب في المكتب.","在庫、射出成形の生産、品質管理、販売、納品書、購買をひとつにまとめたシステム。現場ではスマートフォン、事務所ではWebで使われています。"],
+"Led the build of all four parts: an Android scanner app (Kotlin), a Node.js API on PostgreSQL, a React web admin and a Python service for labels and PDF forms.":["Memimpin pembangunan keempat bagiannya: aplikasi scanner Android (Kotlin), API Node.js dengan PostgreSQL, web admin React, dan layanan Python untuk label dan formulir PDF.","قدتُ بناء أجزائه الأربعة: تطبيق مسح ضوئي على أندرويد (Kotlin)، وواجهة برمجية Node.js مع PostgreSQL، ولوحة إدارة ويب بـ React، وخدمة Python للملصقات ونماذج PDF.","4つの構成要素すべての開発を主導：Androidスキャナーアプリ（Kotlin）、PostgreSQLを使ったNode.js API、Reactの管理画面、ラベルとPDF帳票用のPythonサービス。"],
+"470+ automated tests, two-factor login, per-department access and an audit trail of every change. A scan resent over weak Wi-Fi is never counted twice.":["470+ tes otomatis, login dua langkah, hak akses per departemen, dan jejak audit untuk setiap perubahan. Scan yang terkirim ulang karena Wi-Fi lemah tidak pernah terhitung dua kali.","أكثر من 470 اختبارًا آليًا، وتسجيل دخول بخطوتين، وصلاحيات لكل قسم، وسجل تدقيق لكل تغيير. ولا يُحتسب المسح مرتين أبدًا إذا أُعيد إرساله بسبب ضعف شبكة Wi-Fi.","470件以上の自動テスト、2段階認証、部署ごとのアクセス権限、すべての変更を記録する監査ログ。Wi-Fiが弱くて再送されたスキャンも二重に計上されません。"],
+"Online bookstore where checkout sends the order straight to the seller's WhatsApp, so no payment gateway is needed.":["Toko buku online yang checkout-nya langsung mengirim pesanan ke WhatsApp penjual, jadi tidak perlu payment gateway.","متجر كتب إلكتروني يرسل الطلب عند إتمامه مباشرة إلى واتساب البائع، دون الحاجة إلى بوابة دفع.","注文内容がそのまま販売者のWhatsAppに届くオンライン書店。決済代行サービスは不要です。"],
+"Admin panel for books, orders and stock; stock is deducted in a single database transaction when an order is marked paid.":["Panel admin untuk buku, pesanan, dan stok; stok dipotong dalam satu transaksi database saat pesanan ditandai lunas.","لوحة إدارة للكتب والطلبات والمخزون؛ يُخصم المخزون في معاملة واحدة بقاعدة البيانات عند تعليم الطلب كمدفوع.","書籍・注文・在庫の管理画面。注文が支払済みになると、在庫は1回のデータベーストランザクションで差し引かれます。"],
+"React and Tailwind front end, Express API and PostgreSQL in Docker, built end to end from a written product spec.":["Front end React dan Tailwind, API Express, dan PostgreSQL di Docker; dibangun utuh dari spesifikasi produk tertulis.","واجهة أمامية بـ React وTailwind، وواجهة برمجية Express، وPostgreSQL داخل Docker، بُنيت بالكامل انطلاقًا من مواصفات منتج مكتوبة.","ReactとTailwindのフロントエンド、Express API、Docker上のPostgreSQL。書面の製品仕様から一貫して構築しました。"],
+"WhatsApp assistant on my own home server: morning reports, server health checks and security patrols, around the clock.":["Asisten WhatsApp di server rumah sendiri: laporan pagi, cek kesehatan server, dan patroli keamanan sepanjang waktu.","مساعد على واتساب يعمل على خادمي المنزلي: تقارير صباحية، وفحوص لصحة الخادم، ودوريات أمنية على مدار الساعة.","自宅サーバーで動くWhatsAppアシスタント。朝のレポート、サーバーの稼働チェック、セキュリティ巡回を24時間行います。"],
+"Separate agent crews for finance, server operations and security; anything risky waits for my approval in chat.":["Tim agen terpisah untuk keuangan, operasional server, dan keamanan; tindakan berisiko menunggu persetujuan saya di chat.","فرق وكلاء منفصلة للمالية وتشغيل الخوادم والأمن؛ وأي إجراء خطِر ينتظر موافقتي في المحادثة.","財務、サーバー運用、セキュリティを担当する別々のエージェントチーム。リスクのある操作はチャットで私の承認を待ちます。"],
+"Moved from OpenClaw to Hermes Agent and CrewAI in gated stages, each passing fault-injection and security tests before the next.":["Dipindahkan dari OpenClaw ke Hermes Agent dan CrewAI secara bertahap; setiap tahap harus lolos uji fault injection dan uji keamanan sebelum lanjut.","نُقل من OpenClaw إلى Hermes Agent وCrewAI على مراحل، ولا تبدأ مرحلة قبل أن تجتاز سابقتها اختبارات حقن الأعطال والأمان.","OpenClawからHermes AgentとCrewAIへ段階的に移行。各段階で障害注入テストとセキュリティテストに合格してから次へ進みました。"],
 "Ongoing":["Berlangsung","مستمر","継続中"],
 "Spring toggle":["Sakelar pegas","مفتاح نابض","スプリングトグル"],
 "click":["klik","انقر","クリック"],
@@ -809,19 +833,6 @@ function setLang(l){
   document.title=T(title0);durations();dispatchEvent(new Event('langchange')); // hero canvas repaints the name on the new side
 }
 langSel?.addEventListener('change',()=>{setLang(langSel.value);try{localStorage.setItem('lang',lang)}catch(e){}});
-
-// cursor-follow project preview (lerped)
-guard('project preview',()=>{
-const pv=document.getElementById('preview'),art=document.getElementById('art'),tag=document.getElementById('tag');
-let mx=0,my=0,x=0,y=0,raf;
-const loop=()=>{x+=(mx-x)*.16;y+=(my-y)*.16;pv.style.transform=`translate(${x-120}px,${y-90}px) scale(${pv.classList.contains('on')?1:.85}) rotate(${(mx-x)*.04}deg)`;raf=requestAnimationFrame(loop)};
-document.querySelectorAll('#projects .row').forEach(r=>{
-  r.addEventListener('mouseenter',e=>{art.className='art '+r.dataset.art;tag.textContent=r.dataset.tag;if(!pv.classList.contains('on')){x=mx=e.clientX;y=my=e.clientY}pv.classList.add('on')});
-  r.addEventListener('mouseleave',()=>pv.classList.remove('on'));
-});
-addEventListener('mousemove',e=>{mx=e.clientX+140;my=e.clientY});
-loop();
-});
 
 // spring toggle
 document.querySelectorAll('.sw').forEach(s=>s.addEventListener('click',()=>s.setAttribute('aria-checked',s.getAttribute('aria-checked')!=='true')));
@@ -1072,7 +1083,7 @@ const SLIDES={
   '#skills':()=>all('#skills .sk').map(e=>cl(e,'skills')),
   '#education':()=>all('#education .edu > div').map(e=>cl(e,'edu')),
   '#hobbies':()=>[cl(document.querySelector('#hobbies .hob'))],
-  '#projects-s':()=>all('#projects .row').map(r=>{const w=document.createElement('div');w.className='tm-proj';w.innerHTML='<i></i><small></small>';w.firstChild.className='tm-band '+r.dataset.art;w.querySelector('small').textContent=r.dataset.tag;w.append(cl(r));return w}),
+  '#projects-s':()=>all('#projects .row').map(r=>{const w=document.createElement('div');w.className='tm-proj';w.innerHTML='<i></i><small></small>';w.firstChild.className='tm-band '+r.dataset.art;w.querySelector('small').textContent=r.dataset.tag;const c=cl(r);c.querySelector('details')?.setAttribute('open','');w.append(c);return w}),
   '#experiments':()=>{const w=document.createElement('div');w.className='tm-exp';w.innerHTML='<p></p><ul></ul><button class="copy" type="button"></button>';
     w.querySelector('p').textContent=T('Interactive experiments live on the page.');
     all('#experiments figcaption').forEach(f=>{const li=document.createElement('li');li.textContent=f.firstElementChild.textContent;w.querySelector('ul').append(li)});
