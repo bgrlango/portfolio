@@ -29,6 +29,11 @@ setTimeout(async () => {
       [page.replace('<li><a href="#contact">Contact</a></li>', '<li><a href="#certs">Certs</a></li>'), /Link menu "#certs"/],
     ]) { const r = await put(bad); assert.equal(r.status, 400); assert.match(await r.text(), why); }
     assert.match(await (await fetch(base + '/')).text(), /const guard=\(name/, 'refused saves leave the live page untouched');
+    // share image + icons are served from the data dir; a missing one is a 404, not a crash
+    fs.writeFileSync(path.join(dir, 'og.jpg'), 'jpg-bytes');
+    const og = await fetch(base + '/og.jpg');
+    assert.equal(og.headers.get('content-type'), 'image/jpeg'); assert.equal(await og.text(), 'jpg-bytes');
+    assert.equal((await fetch(base + '/favicon.svg')).status, 404);
     const wrong = { headers: { authorization: 'Basic ' + Buffer.from('admin:guess').toString('base64') } };
     for (let i = 0; i < 20; i++) await fetch(base + '/admin', wrong);
     assert.equal((await fetch(base + '/admin', { headers: { authorization: auth } })).status, 429, 'locked after 20 wrong logins');

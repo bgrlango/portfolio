@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<!-- same mark as the "SS" photo tile in About: orange to blue, soft highlight top-left -->
+<defs>
+<linearGradient id="g" x1=".05" y1="-.04" x2=".95" y2="1.04"><stop offset="0" stop-color="#ff5b1f"/><stop offset="1" stop-color="#6c8cff"/></linearGradient>
+<radialGradient id="h" cx=".3" cy=".25" r=".51"><stop offset="0" stop-color="#ffd0b3"/><stop offset="1" stop-color="#ffd0b3" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="64" height="64" rx="16" fill="url(#g)"/>
+<rect width="64" height="64" rx="16" fill="url(#h)"/>
+<text x="32" y="42" text-anchor="middle" font-family="system-ui,-apple-system,'Segoe UI',sans-serif" font-size="28" font-weight="600" fill="#fff">SS</text>
+</svg>

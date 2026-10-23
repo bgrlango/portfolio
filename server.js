@@ -22,6 +22,8 @@ const authed = req => {
   return !!m && crypto.timingSafeEqual(sha(Buffer.from(m[1], 'base64').toString()), WANT);
 };
 const ADMIN = fs.readFileSync(path.join(__dirname, 'admin.html'));
+// Files next to the page in data/: the share image and the icons. /favicon.ico gets the PNG icon (browsers sniff it fine).
+const STATIC = { '/og.jpg': ['og.jpg', 'image/jpeg'], '/favicon.svg': ['favicon.svg', 'image/svg+xml'], '/apple-touch-icon.png': ['apple-touch-icon.png', 'image/png'], '/favicon.ico': ['apple-touch-icon.png', 'image/png'] };
 const send = (res, code, body, type = 'text/html; charset=utf-8', extra = {}) => {
   res.writeHead(code, { 'Content-Type': type, ...extra });
   res.end(body);
@@ -34,8 +36,8 @@ const check = html => {
   for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
     const [, attrs, code] = m;
     if (/\bsrc=/i.test(attrs)) continue;
-    if (/application\/json/i.test(attrs)) {
-      try { JSON.parse(code); } catch (e) { out.push(`Kamus terjemahan (script JSON, baris ${line(m.index)}) tidak valid: ${e.message}`); }
+    if (/type="[^"]*json"/i.test(attrs)) { // the #i18n dictionary and the JSON-LD profile
+      try { JSON.parse(code); } catch (e) { out.push(`${/id="i18n"/.test(attrs) ? 'Kamus terjemahan (#i18n)' : 'Script JSON'} di baris ${line(m.index)} tidak valid: ${e.message}`); }
     } else {
       try { new vm.Script(code, { filename: 'page', lineOffset: line(m.index) - 1 }); } // compiles only, never runs
       catch (e) { out.push(`Error di script baris ${(/page:(\d+)/.exec(e.stack) || [, line(m.index)])[1]}: ${e.message}`); }
@@ -73,6 +75,11 @@ http.createServer((req, res) => {
     const url = req.url.split('?')[0];
     if (url === '/' || url === '/index.html') return send(res, 200, fs.readFileSync(PAGE), undefined, { 'Cache-Control': 'no-cache' });
     if (url === '/healthz') return send(res, 200, 'ok', 'text/plain');
+    if (STATIC[url]) {
+      const [file, type] = STATIC[url]; let buf;
+      try { buf = fs.readFileSync(path.join(DATA, file)); } catch { return send(res, 404, 'Not found', 'text/plain'); }
+      return send(res, 200, buf, type, { 'Cache-Control': 'public, max-age=86400' });
+    }
     if (url !== '/admin' && !url.startsWith('/admin/')) return send(res, 404, 'Not found', 'text/plain');
 
     if (locked()) return send(res, 429, 'Terlalu banyak login gagal. Coba lagi dalam 15 menit.', 'text/plain; charset=utf-8');
