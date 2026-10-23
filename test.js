@@ -34,9 +34,22 @@ setTimeout(async () => {
     const og = await fetch(base + '/og.jpg');
     assert.equal(og.headers.get('content-type'), 'image/jpeg'); assert.equal(await og.text(), 'jpg-bytes');
     assert.equal((await fetch(base + '/favicon.svg')).status, 404);
-    const wrong = { headers: { authorization: 'Basic ' + Buffer.from('admin:guess').toString('base64') } };
-    for (let i = 0; i < 20; i++) await fetch(base + '/admin', wrong);
-    assert.equal((await fetch(base + '/admin', { headers: { authorization: auth } })).status, 429, 'locked after 20 wrong logins');
+    fs.mkdirSync(path.join(dir, 'fonts')); fs.writeFileSync(path.join(dir, 'fonts', 'geist-latin.woff2'), 'woff2');
+    assert.equal((await fetch(base + '/fonts/geist-latin.woff2')).headers.get('content-type'), 'font/woff2');
+    assert.match((await fetch(base + '/')).headers.get('content-security-policy'), /default-src 'self'/, 'pages carry a CSP');
+    // version history: the backups (v1, v2) are listed and readable, only with the admin login, never outside data/history
+    assert.equal((await fetch(base + '/admin/history')).status, 401);
+    const asAdmin = u => fetch(base + u, { headers: { authorization: auth } }), versions = await (await asAdmin('/admin/history')).json();
+    assert.equal(versions.length, 2);
+    assert.ok((await Promise.all(versions.map(v => asAdmin('/admin/history/' + v.name).then(r => r.text())))).some(t => /v1/.test(t)), 'v1 can be loaded back');
+    assert.equal((await asAdmin('/admin/history/..%2Fserver.js')).status, 404);
+    // lockout: 10 wrong logins lock out that client only, the owner elsewhere still gets in; 100 in total lock out everyone
+    const as = (ip, a) => fetch(base + '/admin', { headers: { authorization: a, 'cf-connecting-ip': ip } }), guess = 'Basic ' + Buffer.from('admin:guess').toString('base64');
+    for (let i = 0; i < 10; i++) await as('203.0.113.1', guess);
+    assert.equal((await as('203.0.113.1', auth)).status, 429, 'guessing client locked out');
+    assert.equal((await as('203.0.113.2', auth)).status, 200, 'owner on another IP unaffected');
+    for (let i = 0; i < 90; i++) await as('198.51.100.' + (i % 9), guess);
+    assert.equal((await as('203.0.113.3', auth)).status, 429, 'locked for everyone after 100 wrong logins');
     assert.equal((await fetch(base + '/')).status, 200, 'public page unaffected by lockout');
     console.log('OK');
   } catch (e) { console.error(e); process.exitCode = 1; } finally { srv.kill(); }

@@ -8,7 +8,7 @@ html,body{height:100%;margin:0}
 body{display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font:14px system-ui,-apple-system,"Segoe UI",sans-serif}
 header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--card)}
 header b{margin-right:8px}
-button,a.btn{font:inherit;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:inherit;cursor:pointer;text-decoration:none}
+button,a.btn,select{font:inherit;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:inherit;cursor:pointer;text-decoration:none}
 button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
 #save{background:var(--accent);color:#fff;border-color:transparent;font-weight:600}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -25,6 +25,7 @@ textarea{padding:14px 16px;font:12.5px/1.5 ui-monospace,Consolas,monospace;backg
   <button id="t-html" type="button" aria-pressed="false">HTML</button>
   <button id="save" type="button">Simpan</button>
   <a class="btn" href="/" target="_blank" rel="noopener">Lihat situs ↗</a>
+  <select id="ver" aria-label="Riwayat versi"><option value="">Riwayat versi…</option></select>
   <span id="msg" role="status">Memuat…</span>
   <p class="hint" id="hint-vis">Klik teks mana saja lalu ketik. Animasi &amp; efek mati selama edit. Link, nama besar di banner, dan kode → tab HTML. Ctrl+S = simpan.</p>
   <p class="hint" id="hint-html" hidden>Edit kode HTML langsung (Ctrl+F untuk cari). Tab Visual = pratinjau. Ctrl+S = simpan.</p>
@@ -92,13 +93,29 @@ const save=async()=>{
   try{
     const r=await fetch(location.origin+'/admin/source',{method:'PUT',headers:{'x-admin':'1','Content-Type':'text/html; charset=utf-8'},body:html});
     if(!r.ok){const t=await r.text();if(r.status===400)alert(t);throw new Error(t.split('\n')[0])} // 400 = the server's page check, which lists every problem
-    dirty=false;base=untranslated(html);say('Tersimpan ✓ '+new Date().toLocaleTimeString('id-ID'));
+    dirty=false;base=untranslated(html);say('Tersimpan ✓ '+new Date().toLocaleTimeString('id-ID'));loadHistory();
   }catch(e){say('Gagal: '+e.message)}
 };
 $('save').onclick=save;
 function key(e){if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();save()}}
 addEventListener('keydown',key);
 addEventListener('beforeunload',e=>{if(dirty)e.preventDefault()});
+
+// Version history: every save first backs up the page. Picking a version loads it into the editor; Simpan restores it.
+const ver=$('ver');
+const loadHistory=()=>fetch(location.origin+'/admin/history').then(r=>r.json()).then(list=>{
+  ver.length=1;
+  for(const v of list){const label=/^\d+-([a-z][\w-]*)\.html$/i.exec(v.name); // deploy backups carry a name, e.g. "before-guards"
+    ver.add(new Option(new Date(v.time).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})+(label?' · '+label[1]:'')+' · '+Math.round(v.size/1024)+' KB',v.name))}
+}).catch(()=>{});
+ver.onchange=async()=>{
+  const name=ver.value;ver.value='';if(!name||dirty&&!confirm('Perubahan yang belum disimpan akan hilang. Muat versi lama?'))return;
+  try{
+    const r=await fetch(location.origin+'/admin/history/'+encodeURIComponent(name));if(!r.ok)throw new Error(r.status);
+    const src=await r.text();ta.value=src;vis.srcdoc=src;mark();say('Versi lama dimuat, belum disimpan. Klik Simpan untuk memulihkannya.');
+  }catch(e){say('Gagal memuat versi: '+e.message)}
+};
+loadHistory();
 
 fetch(location.origin+'/admin/source').then(r=>r.ok?r.text():Promise.reject(r.status))
   .then(src=>{vis.srcdoc=src;base=untranslated(src);say('Siap')},e=>say('Gagal memuat: '+e));

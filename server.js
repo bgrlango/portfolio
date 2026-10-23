@@ -9,13 +9,14 @@ if (ADMIN_PASS.length < 8) throw new Error('ADMIN_PASS must be set (min 8 chars)
 
 const sha = s => crypto.createHash('sha256').update(s).digest();
 const WANT = sha(`${ADMIN_USER}:${ADMIN_PASS}`);
-// Brute-force guard: max 20 wrong logins per 15 min, then admin locks for everyone until the window ends.
-// ponytail: one global counter, not per-IP (the client-IP header is spoofable via the LAN fallback port).
-// Ceiling: an attacker can lock the owner out for 15 min; switch to per-IP on Cf-Connecting-IP if that ever happens.
-let fails = 0, since = Date.now();
-const locked = () => {
-  if (Date.now() - since > 15 * 60e3) { fails = 0; since = Date.now(); }
-  return fails >= 20;
+// Brute-force guard, per 15-minute window: 10 wrong logins lock out that client, 100 in total lock out everyone.
+// The client is Cloudflare's Cf-Connecting-IP; a request that bypasses Cloudflare (LAN port) could fake it, and the total caps that.
+const WINDOW = 15 * 60e3, PER_CLIENT = 10, TOTAL = 100, fails = new Map();
+let total = 0, since = Date.now();
+const client = req => req.headers['cf-connecting-ip'] || req.socket.remoteAddress;
+const locked = ip => {
+  if (Date.now() - since > WINDOW) { fails.clear(); total = 0; since = Date.now(); }
+  return total >= TOTAL || (fails.get(ip) || 0) >= PER_CLIENT;
 };
 const authed = req => {
   const m = /^Basic (.+)$/.exec(req.headers.authorization || '');
@@ -24,8 +25,13 @@ const authed = req => {
 const ADMIN = fs.readFileSync(path.join(__dirname, 'admin.html'));
 // Files next to the page in data/: the share image and the icons. /favicon.ico gets the PNG icon (browsers sniff it fine).
 const STATIC = { '/og.jpg': ['og.jpg', 'image/jpeg'], '/favicon.svg': ['favicon.svg', 'image/svg+xml'], '/apple-touch-icon.png': ['apple-touch-icon.png', 'image/png'], '/favicon.ico': ['apple-touch-icon.png', 'image/png'] };
+// HTML pages may only load from this origin (+ Cloudflare's analytics beacon). Inline script/style stay allowed: the page is one file.
+const SECURITY = {
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'self'; base-uri 'none'; form-action 'none'; object-src 'none'",
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
+};
 const send = (res, code, body, type = 'text/html; charset=utf-8', extra = {}) => {
-  res.writeHead(code, { 'Content-Type': type, ...extra });
+  res.writeHead(code, { 'Content-Type': type, ...(type.startsWith('text/html') ? SECURITY : {}), ...extra });
   res.end(body);
 };
 
@@ -75,20 +81,33 @@ http.createServer((req, res) => {
     const url = req.url.split('?')[0];
     if (url === '/' || url === '/index.html') return send(res, 200, fs.readFileSync(PAGE), undefined, { 'Cache-Control': 'no-cache' });
     if (url === '/healthz') return send(res, 200, 'ok', 'text/plain');
-    if (STATIC[url]) {
-      const [file, type] = STATIC[url]; let buf;
-      try { buf = fs.readFileSync(path.join(DATA, file)); } catch { return send(res, 404, 'Not found', 'text/plain'); }
-      return send(res, 200, buf, type, { 'Cache-Control': 'public, max-age=86400' });
+    const font = /^\/fonts\/([\w-]+\.woff2)$/.exec(url), file = font ? ['fonts/' + font[1], 'font/woff2'] : STATIC[url];
+    if (file) {
+      let buf; try { buf = fs.readFileSync(path.join(DATA, file[0])); } catch { return send(res, 404, 'Not found', 'text/plain'); }
+      return send(res, 200, buf, file[1], { 'Cache-Control': font ? 'public, max-age=31536000, immutable' : 'public, max-age=86400' });
     }
     if (url !== '/admin' && !url.startsWith('/admin/')) return send(res, 404, 'Not found', 'text/plain');
 
-    if (locked()) return send(res, 429, 'Terlalu banyak login gagal. Coba lagi dalam 15 menit.', 'text/plain; charset=utf-8');
+    const ip = client(req);
+    if (locked(ip)) return send(res, 429, 'Terlalu banyak login gagal. Coba lagi dalam 15 menit.', 'text/plain; charset=utf-8');
     if (!authed(req)) {
-      if (req.headers.authorization) fails++; // only wrong guesses count, not the browser's first credential-less request
+      if (req.headers.authorization) { fails.set(ip, (fails.get(ip) || 0) + 1); total++; } // only wrong guesses count, not the browser's first credential-less request
       return send(res, 401, 'Login required', 'text/plain', { 'WWW-Authenticate': 'Basic realm="Portfolio admin", charset="UTF-8"' });
     }
     const priv = { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' };
     if (req.method === 'GET' && (url === '/admin' || url === '/admin/')) return send(res, 200, ADMIN, undefined, priv);
+    // version history: the backup taken before every save, newest first; /admin loads one into the editor and Simpan restores it
+    if (req.method === 'GET' && url === '/admin/history') {
+      const list = fs.existsSync(HIST) ? fs.readdirSync(HIST).filter(f => f.endsWith('.html'))
+        .map(f => { const st = fs.statSync(path.join(HIST, f)); return { name: f, size: st.size, time: st.mtimeMs }; })
+        .sort((a, b) => b.time - a.time).slice(0, 60) : [];
+      return send(res, 200, JSON.stringify(list), 'application/json', priv);
+    }
+    const ver = /^\/admin\/history\/([\w.-]+\.html)$/.exec(url); // no slashes: stays inside data/history
+    if (req.method === 'GET' && ver) {
+      let buf; try { buf = fs.readFileSync(path.join(HIST, ver[1])); } catch { return send(res, 404, 'Not found', 'text/plain'); }
+      return send(res, 200, buf, 'text/plain; charset=utf-8', priv);
+    }
     if (url === '/admin/source') {
       if (req.method === 'GET') return send(res, 200, fs.readFileSync(PAGE), 'text/plain; charset=utf-8', priv);
       // custom header forces a CORS preflight, which we never answer → other sites can't reuse the browser's cached login (CSRF)
